@@ -13,7 +13,6 @@
  * NOTE: P1.11 and P1.12 are the Arduino-compatible I2C header pins on PCA10156.
  * P1.00/P1.01 are NOT wired to any header on this board.
  */
-
 &pinctrl {
 	i2c21_default: i2c21_default {
 		group1 {
@@ -54,19 +53,6 @@
 	pinctrl-1 = <&i2c21_sleep>;
 	pinctrl-names = "default", "sleep";
 	clock-frequency = <100000>;
-};
-
-/*
- * Disable the on-board SPI flash (MX25R64) and SPI00 peripheral.
- * They claim P2.00 (reset), P2.01 (SCK), P2.02 (MOSI), P2.04 (MISO),
- * P2.05 (CS) — which collide with our FIFO data bus D0-D7 on P2.00-P2.07.
- *
- * NOTE: Even with SPI00 disabled, the flash chip is physically soldered
- * to these traces. If bus contention causes problems, the data bus
- * may need to be moved to different pins.
- */
-&spi00 {
-	status = "disabled";
 };
 
 &spi30 {
@@ -112,4 +98,28 @@
 			gamctrn1 = [03 1D 07 06 2E 2C 29 2D 2E 2E 37 3F 00 00 02 10];
 		};
 	};
+};
+
+/*
+ * Disable the on-board SPI flash (MX25R64) and SPI00 peripheral.
+ * They claim P2.00 (reset), P2.01 (SCK), P2.02 (MOSI), P2.04 (MISO),
+ * P2.05 (CS) — which collide with our FIFO data bus D0-D7 on P2.00-P2.07.
+ *
+ * NOTE: Even with SPI00 disabled, the flash chip is physically soldered
+ * to these traces. If bus contention causes problems, the data bus
+ * may need to be moved to different pins.
+ */
+&spi00 {
+	status = "disabled";
+};
+
+/* uart30 and spi30 share the same address block (0x104000).
+ * Disable uart30 so spi30 (domain-30, gpiote30) can use P0.00–P0.03. */
+&uart30 {
+	status = "disabled";
+};
+
+/* spi22 is unused — free its pins for the camera project */
+&spi22 {
+	status = "disabled";
 };
