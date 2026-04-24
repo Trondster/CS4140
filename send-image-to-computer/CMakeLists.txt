@@ -3,4 +3,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(send-image-to-computer)
 
-target_sources(app PRIVATE src/main.c src/tft_display.c src/uart_img_send.c)
+target_sources(app PRIVATE
+    src/main.c
+    src/uart_img_send.c
+)

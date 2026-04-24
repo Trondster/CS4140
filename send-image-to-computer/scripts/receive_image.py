@@ -3,18 +3,20 @@
 receive_image.py — Receive RGB565 images from nRF54L15 over UART (1 Mbaud).
 
 Protocol:
-  [0xDE 0xAD 0xBE 0xEF]  start-of-frame marker
-  [W_lo W_hi H_lo H_hi]  dimensions as two little-endian uint16
-  [bpp]                   bytes per pixel (2 = RGB565)
-  [endian]                0 = little-endian pixels, 1 = big-endian pixels
-  [W * H * bpp bytes]     raw pixel data
-  [0xCA 0xFE 0xBA 0xBE]  end-of-frame marker
+  [0xDE 0xAD 0xBE 0xEF]    start-of-frame marker
+  [W_lo W_hi H_lo H_hi]    dimensions as two little-endian uint16
+  [bpp]                     bytes per pixel (2 = RGB565)
+  [endian]                  0 = little-endian pixels, 1 = big-endian pixels
+  [meta_len_lo meta_len_hi] metadata length (little-endian uint16), 0 = none
+  [meta_len bytes]          UTF-8 metadata string (no null terminator)
+  [W * H * bpp bytes]       raw pixel data
+  [0xCA 0xFE 0xBA 0xBE]    end-of-frame marker
 
 Requirements:
   pip install pyserial pillow
 
 Usage:
-  python receive_image.py COM3          # Windows
+  python receive_image.py COM4          # Windows
   python receive_image.py /dev/ttyACM0  # Linux / macOS
 """
 
@@ -29,7 +31,7 @@ except ImportError:
     sys.exit("pyserial not found — run:  pip install pyserial")
 
 try:
-    from PIL import Image
+    from PIL import Image, PngImagePlugin
 except ImportError:
     sys.exit("Pillow not found — run:  pip install pillow")
 
@@ -83,19 +85,33 @@ def receive_frames(port: str) -> None:
         while True:
             find_marker(ser, FRAME_SOF)
 
-            hdr = ser.read(6)  # W_lo W_hi H_lo H_hi bpp endian
-            if len(hdr) < 6:
+            # Fixed header: W W H H bpp endian meta_len meta_len
+            hdr = ser.read(8)
+            if len(hdr) < 8:
                 print("Timeout reading header, retrying ...")
                 continue
 
             width, height = struct.unpack_from("<HH", hdr, 0)
             bpp        = hdr[4]
             big_endian = bool(hdr[5])
+            meta_len   = struct.unpack_from("<H", hdr, 6)[0]
             size       = width * height * bpp
+
+            # Variable-length metadata
+            metadata = ""
+            if meta_len > 0:
+                raw = ser.read(meta_len)
+                if len(raw) < meta_len:
+                    print("Timeout reading metadata, retrying ...")
+                    continue
+                metadata = raw.decode("utf-8", errors="replace")
 
             print(f"Frame incoming: {width}×{height}, {bpp} bpp, "
                   f"{'big' if big_endian else 'little'}-endian, {size} bytes")
+            if metadata:
+                print(f"  Metadata: {metadata}")
 
+            # Pixel data
             data = ser.read(size)
             if len(data) < size:
                 print(f"  Truncated ({len(data)}/{size} bytes) — skipping")
@@ -106,10 +122,15 @@ def receive_frames(port: str) -> None:
                 print(f"  Bad end marker: {eof.hex()} — skipping")
                 continue
 
+            # Save image — embed metadata as a PNG tEXt chunk
             frame_count += 1
             filename = f"frame_{frame_count:04d}_{int(time.time())}.png"
             img = rgb565_to_image(data, width, height, big_endian)
-            img.save(filename)
+
+            png_meta = PngImagePlugin.PngInfo()
+            if metadata:
+                png_meta.add_text("metadata", metadata)
+            img.save(filename, pnginfo=png_meta)
             print(f"  Saved: {filename}\n")
 
 

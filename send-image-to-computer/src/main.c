@@ -3,7 +3,6 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/logging/log.h>
 
-#include "tft_display.h"
 #include "usnlogo.h"
 #include "uart_img_send.h"
 
@@ -24,18 +23,7 @@ static void btn_pressed(const struct device *dev, struct gpio_callback *cb,
 
 int main(void)
 {
-	const struct device *display = TFT_DEVICE();
-	const struct device *uart    = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
-
-	if (tft_init(display) != 0) {
-		LOG_ERR("Display not ready");
-		return -1;
-	}
-
-	tft_fill_screen(display, TFT_COLOR_BLACK);
-	tft_draw_image(display, 0, 0, USNLOGO_WIDTH, USNLOGO_HEIGHT,
-		       usnlogo_rgb565);
-	tft_draw_bounding_box(display, 40, 10, 80, 55, "USN 0.97");
+	const struct device *uart = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	if (!gpio_is_ready_dt(&btn)) {
 		LOG_ERR("Button GPIO not ready");
@@ -52,11 +40,15 @@ int main(void)
 		if (send_flag) {
 			send_flag = false;
 			k_msleep(50); /* debounce */
-			LOG_INF("Sending USN logo (%u bytes)...",
-				(unsigned)(USNLOGO_WIDTH * USNLOGO_HEIGHT * 2U));
+
+			/* Change the metadata string to describe the image content,
+			 * e.g. "drone=1", "class=drone,conf=0.97", or "label=clear". */
+			const char *metadata = "label=usnlogo";
+
+			LOG_INF("Sending frame with metadata: \"%s\"", metadata);
 			uart_img_send(uart, usnlogo_rgb565,
 				      USNLOGO_WIDTH, USNLOGO_HEIGHT,
-				      2, 1 /* big-endian */);
+				      2, 1 /* big-endian */, metadata);
 			LOG_INF("Done");
 		}
 		k_msleep(10);
