@@ -14,6 +14,9 @@
 #include "fifo.h"
 #include "tft_display.h"
 
+#define FRAME_RATE 30
+#define FRAME_INTERVAL_MS (1000 / FRAME_RATE)
+
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
 
 static uint8_t frame_buf[IMG_SIZE] __aligned(4);
@@ -41,14 +44,17 @@ int main(void)
 	
 	tft_fill_screen(display, TFT_COLOR_BLACK);
 
+	long long next = 0;
 	while (1) {
+		next = k_uptime_get();
+
 		fifo_capture(frame_buf, IMG_SIZE);
 		
 		tft_draw_image(display, 0, 0, 160, 120, frame_buf);
 		
 		tft_draw_bounding_box(display, 0, 0, 160, 120, "Test");
 
-		k_msleep(33);
+		k_msleep(MAX(0, FRAME_INTERVAL_MS - (k_uptime_get() - next)));
 	}
 
 	return 0;
