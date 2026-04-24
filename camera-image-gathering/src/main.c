@@ -124,15 +124,15 @@ int main(void)
 				tft_draw_image(display, 0, 0, 160, 120, frame_buf);
 				app_state = STATE_FROZEN;
 				LOG_INF("Frame frozen — sw1=drone, sw2=clear, sw0=live");
-				/* Hex dump — pipe the console to a file on the host. */
-				printk("\r\n---FRAME_START---\r\n");
-				for (size_t i = 0; i < IMG_SIZE; i++) {
-					if ((i % LINE_STRIDE) == 0) {
-						printk("\r\n");
-					}
-					printk("%02x", frame_buf[i]);
-				}
-				printk("\r\n---FRAME_END---\r\n");
+				// Trond's ugly hex debug dump. Leaving the comment here, just in case.
+				// printk("\r\n---FRAME_START---\r\n");
+				// for (size_t i = 0; i < IMG_SIZE; i++) {
+				// 	if ((i % LINE_STRIDE) == 0) {
+				// 		printk("\r\n");
+				// 	}
+				// 	printk("%02x", frame_buf[i]);
+				// }
+				// printk("\r\n---FRAME_END---\r\n");
 			} else {
 				app_state = STATE_LIVE;
 				LOG_INF("Back to live view");
