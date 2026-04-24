@@ -23,20 +23,22 @@ static uint8_t frame_buf[IMG_SIZE] __aligned(4);
 
 int main(void)
 {
-	printk("\n*** Camera capture and show on screen ***\n");
+	LOG_INF("\n*** Camera capture and show on screen ***\n");
 
 	const struct device *display = TFT_DEVICE();
 
 	if (tft_init(display) != 0) {
-		printk("Display not ready\n");
+		LOG_ERR("Display not ready\n");
 		return -1;
 	}
 
 	if (ov7670_init() != 0) {
+		LOG_ERR("Camera init failed\n");
 		return -EIO;
 	}
 
 	if (fifo_init() != 0) {
+		LOG_ERR("FIFO init failed\n");
 		return -EIO;
 	}
 
