@@ -120,10 +120,19 @@ int main(void)
 		if (sw0_flag) {
 			sw0_flag = false;
 			if (app_state == STATE_LIVE) {
-				fifo_capture(frame_buf, IMG_SIZE);
+				fifo_capture(frame_buf, IMG_SIZE, LINE_STRIDE);
 				tft_draw_image(display, 0, 0, 160, 120, frame_buf);
 				app_state = STATE_FROZEN;
 				LOG_INF("Frame frozen — sw1=drone, sw2=clear, sw0=live");
+				// Trond's ugly hex debug dump. Leaving the comment here, just in case.
+				// printk("\r\n---FRAME_START---\r\n");
+				// for (size_t i = 0; i < IMG_SIZE; i++) {
+				// 	if ((i % LINE_STRIDE) == 0) {
+				// 		printk("\r\n");
+				// 	}
+				// 	printk("%02x", frame_buf[i]);
+				// }
+				// printk("\r\n---FRAME_END---\r\n");
 			} else {
 				app_state = STATE_LIVE;
 				LOG_INF("Back to live view");
@@ -150,7 +159,7 @@ int main(void)
 			sw2_flag = false;
 
 			next = k_uptime_get();
-			fifo_capture(frame_buf, IMG_SIZE);
+			fifo_capture(frame_buf, IMG_SIZE, LINE_STRIDE);
 			tft_draw_image(display, 0, 0, 160, 120, frame_buf);
 			int32_t remaining = FRAME_INTERVAL_MS - (int32_t)(k_uptime_get() - next);
 			if (remaining > 0) {

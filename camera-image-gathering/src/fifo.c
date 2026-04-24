@@ -140,7 +140,7 @@ int fifo_init(void)
 	return 0;
 }
 
-int fifo_capture(uint8_t *buf, size_t size)
+int fifo_capture(uint8_t *buf, size_t size, size_t line_stride)
 {
 	/* 1.  Wait for VSYNC = 1  (vertical blanking / end of old frame) */
 	while (gpio_pin_get_raw(gpio2, PIN_VSYNC) == 0) {
@@ -168,9 +168,18 @@ int fifo_capture(uint8_t *buf, size_t size)
 	/* 7.  Clock out every byte.
 	 *     AL422B: data valid while RCK is HIGH; pointer advances on
 	 *     falling edge.  RCK is also LED0 — it blinks during readout. */
+	const int trouble_byte = line_stride - 2;
 	for (size_t i = 0; i < size; i++) {
 		gpio_pin_set_raw(gpio2, PIN_RCK, 1);
 		buf[i] = read_byte();
+		if (buf[i] != 0 && (i % line_stride) == trouble_byte) {
+			//The second last byte in each LINE_STRIDE should always be 0x00.
+			//Inserting zero as the second last byte, and inserting the read byte at the end:
+			//Do not need to check for array bounds - we are at the second to last byte in a line.
+			buf[i + 1] = buf[i];
+			buf[i] = 0;
+			++i;
+		}
 		gpio_pin_set_raw(gpio2, PIN_RCK, 0);
 	}
 

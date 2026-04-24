@@ -9,6 +9,7 @@
 #define IMG_H    120
 #define IMG_BPP  2
 #define IMG_SIZE (IMG_W * IMG_H * IMG_BPP)  /* 38 400 bytes */
+#define LINE_STRIDE (IMG_W * IMG_BPP)
 
 /**
  * @brief Configure GPIO pins for the AL422B FIFO interface.
@@ -31,6 +32,6 @@ int fifo_init(void);
  * @param size  Bytes to read — normally IMG_SIZE.
  * @return 0 on success.
  */
-int fifo_capture(uint8_t *buf, size_t size);
+int fifo_capture(uint8_t *buf, size_t size, size_t line_stride);
 
 #endif /* FIFO_H_ */
