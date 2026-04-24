@@ -50,13 +50,13 @@ int main(void)
 	while (1) {
 		next = k_uptime_get();
 
-		fifo_capture(frame_buf, IMG_SIZE);
+		fifo_capture(frame_buf, IMG_SIZE, LINE_STRIDE);
 		
 		tft_draw_image(display, 0, 0, 160, 120, frame_buf);
 		
-		tft_draw_bounding_box(display, 0, 0, 160, 120, "Test");
+		// tft_draw_bounding_box(display, 0, 0, 160, 120, "Test");
 
-		k_msleep(MAX(0, FRAME_INTERVAL_MS - (k_uptime_get() - next)));
+		// k_msleep(MAX(0, FRAME_INTERVAL_MS - (k_uptime_get() - next)));
 	}
 
 	return 0;
