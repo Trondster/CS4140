@@ -14,7 +14,7 @@
 #include "fifo.h"
 #include "tft_display.h"
 
-#define FRAME_RATE 30
+#define FRAME_RATE 5
 #define FRAME_INTERVAL_MS (1000 / FRAME_RATE)
 
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
