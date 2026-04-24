@@ -163,6 +163,9 @@ int fifo_capture(uint8_t *buf, size_t size)
 	/* 6.  Reset read pointer */
 	read_reset();
 
+	/* 6b. It seems that the first byte will be corrupted unless we set RCK low */
+	gpio_pin_set_raw(gpio2, PIN_RCK, 0);
+
 	/* 7.  Clock out every byte.
 	 *     AL422B: data valid while RCK is HIGH; pointer advances on
 	 *     falling edge.  RCK is also LED0 — it blinks during readout. */
