@@ -145,11 +145,13 @@ int main(void)
 				sw1_flag = false;
 				LOG_INF("Sending: label=drone");
 				uart_img_send(uart, frame_buf, 160, 120, 2, 1, "label=drone");
+				tft_draw_bounding_box(display, 0, 0, 160, 120, "drone");
 				LOG_INF("Done");
 			} else if (sw2_flag) {
 				sw2_flag = false;
 				LOG_INF("Sending: label=clear");
 				uart_img_send(uart, frame_buf, 160, 120, 2, 1, "label=clear");
+				tft_draw_bounding_box(display, 0, 0, 160, 120, "clear");
 				LOG_INF("Done");
 			}
 			k_msleep(10);
