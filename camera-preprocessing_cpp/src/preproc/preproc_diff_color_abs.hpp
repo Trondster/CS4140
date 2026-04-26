@@ -9,7 +9,7 @@ class PreprocDiffColorAbs : public IPreprocHandler {
 public:
    bool input_buf_is_current = true; //Keeps track of whether input_buf contains the most recent frame from the camera, or whether second_buf does (after init(), second_buf contains the first captured frame, and input_buf will contain the next captured frame when process() is called for the first time).
 
-   int per_color_gate_value = 3;
+   int per_color_gate_value = PER_COLOR_DIFF_GATE_VALUE;
    //The minimum absolute difference between the current frame and previous frame that will be shown on the display.
    // This is to filter out noise - if the difference is below this value, we will treat it as 0 (i.e. no change) to avoid showing a lot of noise on the display.
 

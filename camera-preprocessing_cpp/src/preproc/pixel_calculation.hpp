@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#define PER_COLOR_DIFF_GATE_VALUE 1
+#define GRAYSCALE_DIFF_GATE_VALUE 3
+
 uint8_t calculate_grayscale(const uint8_t rgb565_pixel1, const uint8_t rgb565_pixel2) {
    //Extract R, G, B components from the RGB565 pixel
    uint16_t pixel = (rgb565_pixel1 << 8) | rgb565_pixel2;
