@@ -247,10 +247,11 @@ int main()
 			next = k_uptime_get();
 			current_handler->process();
 
-			int32_t remaining = FRAME_INTERVAL_MS - static_cast<int32_t>(k_uptime_get() - next);
-			if (remaining > 0) {
-				k_msleep(remaining);
-			}
+			//The reader waits for a VSYNC anyway - skipping the sleep.
+			// int32_t remaining = FRAME_INTERVAL_MS - static_cast<int32_t>(k_uptime_get() - next);
+			// if (remaining > 0) {
+			// 	k_msleep(remaining);
+			// }
 		}
 	}
 
