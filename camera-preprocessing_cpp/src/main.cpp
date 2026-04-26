@@ -26,8 +26,10 @@
 #include "preproc/preproc_grayscale3.hpp"
 #include "preproc/preproc_left_sobel.hpp"
 #include "preproc/preproc_diff_direct.hpp"
-#include "preproc/preproc_diff_grayscale.hpp"
-#include "preproc/preproc_diff_grayscale2.hpp"
+#include "preproc/preproc_diff_grayscale_abs.hpp"
+#include "preproc/preproc_diff_grayscale_minus.hpp"
+#include "preproc/preproc_diff_color_abs.hpp"
+#include "preproc/preproc_diff_color_minus.hpp"
 #include "preproc/preproc_outline_sobel.hpp"
 
 #define FRAME_RATE        5
@@ -134,10 +136,16 @@ static PreprocLeftSobel preproc_left_sobel = PreprocLeftSobel(frame_buf, second_
 // static PreprocDiffDirect preproc_diff_direct = PreprocDiffDirect(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
 // 	IMG_H, IMG_W, IMG_BPP);
 
-static PreprocDiffGrayscale preproc_diff_grayscale = PreprocDiffGrayscale(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
+static PreprocDiffGrayscaleAbs preproc_diff_grayscale_abs = PreprocDiffGrayscaleAbs(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
 	IMG_H, IMG_W, IMG_BPP);
 
-static PreprocDiffGrayscale2 preproc_diff_grayscale2 = PreprocDiffGrayscale2(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
+static PreprocDiffGrayscaleMinus preproc_diff_grayscale_minus = PreprocDiffGrayscaleMinus(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
+	IMG_H, IMG_W, IMG_BPP);
+
+static PreprocDiffColorAbs preproc_diff_color_abs = PreprocDiffColorAbs(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
+	IMG_H, IMG_W, IMG_BPP);
+
+static PreprocDiffColorMinus preproc_diff_color_minus = PreprocDiffColorMinus(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
 	IMG_H, IMG_W, IMG_BPP);
 
 //Inline array of pointers to the handlers, so that we can easily loop through them if we want to.
@@ -149,8 +157,10 @@ static IPreprocHandler* handlers[] = {
 	&preproc_left_sobel,
 	&preproc_outline_sobel,
 	// &preproc_diff_direct,
-	&preproc_diff_grayscale,
-	&preproc_diff_grayscale2,
+	&preproc_diff_grayscale_abs,
+	&preproc_diff_grayscale_minus,
+	&preproc_diff_color_abs,
+	&preproc_diff_color_minus,
 };
 
 void show_handler(IPreprocHandler* handler, struct device* display) {
