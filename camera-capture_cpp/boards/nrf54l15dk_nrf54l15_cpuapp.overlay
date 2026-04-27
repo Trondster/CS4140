@@ -1,0 +1,130 @@
+/*
+ * Device tree overlay for OV7670 + FIFO camera on nRF54L15 DK
+ *
+ * I2C (SCCB): SIOD = P1.11, SIOC = P1.12  (i2c21 / TWIM21 — Arduino I2C header)
+ * Data bus D0-D7 = P2.00-P2.07  (read as low byte of port 2)
+ * VSYNC = P2.08,  WRST = P2.10,  RCK = P2.09
+ * XCLK: provided by 12 MHz oscillator on the camera PCB
+ *
+ * P1.04-P1.07 — UART20 console          DO NOT USE
+ * P2.07 — LED2 (D7: FIFO drives OK, LED flickers with data)
+ * P2.09 — LED0 (RCK: LED blinks during frame readout — capture indicator)
+ *
+ * NOTE: P1.11 and P1.12 are the Arduino-compatible I2C header pins on PCA10156.
+ * P1.00/P1.01 are NOT wired to any header on this board.
+ */
+&pinctrl {
+	i2c21_default: i2c21_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 11)>,
+				<NRF_PSEL(TWIM_SCL, 1, 12)>;
+			/* External 4.7 kΩ pull-ups present — no internal bias needed */
+		};
+	};
+
+	i2c21_sleep: i2c21_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 11)>,
+				<NRF_PSEL(TWIM_SCL, 1, 12)>;
+			low-power-enable;
+		};
+	};
+	
+	spi30_default: spi30_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 0)>,   /* P0.00 */
+				<NRF_PSEL(SPIM_MOSI, 0, 1)>;   /* P0.01 */
+		};
+	};
+
+	spi30_sleep: spi30_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 0)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 1)>;
+			low-power-enable;
+		};
+	};
+};
+
+&i2c21 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c21_default>;
+	pinctrl-1 = <&i2c21_sleep>;
+	pinctrl-names = "default", "sleep";
+	clock-frequency = <100000>;
+};
+
+&spi30 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	pinctrl-0 = <&spi30_default>;
+	pinctrl-1 = <&spi30_sleep>;
+	pinctrl-names = "default", "sleep";
+	cs-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;  /* P0.02 */
+};
+
+/ {
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi30>;
+		dc-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;   /* P0.03 */
+		/* RESET tied to 3.3V via 10 kΩ — no MCU pin needed */
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		st7735r: st7735r@0 {
+			compatible = "sitronix,st7735r";
+			reg = <0>;
+			mipi-max-frequency = <8000000>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			width = <160>;
+			height = <128>;
+			x-offset = <0>;
+			y-offset = <0>;
+			madctl = <0x60>; /* MV+MX: 90° CW landscape */
+			colmod = <0x05>;
+			vmctr1 = <0x0e>;
+			pwctr1 = [A2 02 84];
+			pwctr2 = [C5];
+			pwctr3 = [0A 00];
+			pwctr4 = [8A 2A];
+			pwctr5 = [8A EE];
+			frmctr1 = [01 2C 2D];
+			frmctr2 = [01 2C 2D];
+			frmctr3 = [01 2C 2D 01 2C 2D];
+			gamctrp1 = [02 1C 07 12 37 32 29 2D 29 25 2B 39 00 01 03 10];
+			gamctrn1 = [03 1D 07 06 2E 2C 29 2D 2E 2E 37 3F 00 00 02 10];
+		};
+	};
+};
+
+/*
+ * Disable the on-board SPI flash (MX25R64) and SPI00 peripheral.
+ * They claim P2.00 (reset), P2.01 (SCK), P2.02 (MOSI), P2.04 (MISO),
+ * P2.05 (CS) — which collide with our FIFO data bus D0-D7 on P2.00-P2.07.
+ *
+ * NOTE: Even with SPI00 disabled, the flash chip is physically soldered
+ * to these traces. If bus contention causes problems, the data bus
+ * may need to be moved to different pins.
+ */
+&spi00 {
+	status = "disabled";
+};
+
+/* uart30 and spi30 share the same address block (0x104000).
+ * Disable uart30 so spi30 (domain-30, gpiote30) can use P0.00–P0.03. */
+&uart30 {
+	status = "disabled";
+};
+
+/* spi22 is unused — free its pins for the camera project */
+&spi22 {
+	status = "disabled";
+};
+
+/* Set console UART to 1 Mbaud for fast image transfer */
+&uart20 {
+	current-speed = <1000000>;
+};
