@@ -163,6 +163,7 @@ int fifo_capture(uint8_t *buf, size_t size, size_t line_stride)
 	/* 6.  Reset read pointer */
 	read_reset();
 
+	/* 6b.  Set RCK low, to avoid the otherwise corrupt first byte. */
 	gpio_pin_set_raw(gpio2, PIN_RCK, 0);
 
 	/* 7.  Clock out every byte.

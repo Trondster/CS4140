@@ -28,7 +28,7 @@ public:
    }
 
    const char* get_name() override {
-      return "Downscale Grayscale 2x";
+      return "Downscale Gray 2x";
    }
 };
 

@@ -32,8 +32,10 @@
 #include "preproc/preproc_diff_color_minus.hpp"
 #include "preproc/preproc_outline_sobel.hpp"
 #include "preproc/preproc_downscale_grayscale_2x.hpp"
+#include "preproc/preproc_downscale_grayscale_3x.hpp"
 #include "preproc/preproc_downscale_grayscale_4x.hpp"
 #include "preproc/preproc_downscale_diff_grayscale_minus_2x.hpp"
+#include "preproc/preproc_downscale_diff_grayscale_minus_3x.hpp"
 #include "preproc/preproc_downscale_diff_grayscale_minus_4x.hpp"
 
 #define FRAME_RATE        5
@@ -155,10 +157,16 @@ static PreprocDiffColorMinus preproc_diff_color_minus = PreprocDiffColorMinus(fr
 static PreprocDownscaleGrayscale2x preproc_downscale_grayscale_2x = PreprocDownscaleGrayscale2x(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
 	IMG_H, IMG_W, IMG_BPP);
 
+static PreprocDownscaleGrayscale3x preproc_downscale_grayscale_3x = PreprocDownscaleGrayscale3x(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
+	IMG_H, IMG_W, IMG_BPP);
+
 static PreprocDownscaleGrayscale4x preproc_downscale_grayscale_4x = PreprocDownscaleGrayscale4x(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
 	IMG_H, IMG_W, IMG_BPP);
 
 static PreprocDownscaleDiffGrayscaleMinus2x preproc_downscale_diff_grayscale_minus_2x = PreprocDownscaleDiffGrayscaleMinus2x(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
+	IMG_H, IMG_W, IMG_BPP);
+
+static PreprocDownscaleDiffGrayscaleMinus3x preproc_downscale_diff_grayscale_minus_3x = PreprocDownscaleDiffGrayscaleMinus3x(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
 	IMG_H, IMG_W, IMG_BPP);
 
 static PreprocDownscaleDiffGrayscaleMinus4x preproc_downscale_diff_grayscale_minus_4x = PreprocDownscaleDiffGrayscaleMinus4x(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
@@ -171,6 +179,7 @@ static IPreprocHandler* handlers[] = {
 	// &preproc_grayscale2,
 	// &preproc_grayscale3,
 	&preproc_downscale_grayscale_2x,
+	&preproc_downscale_grayscale_3x,
 	&preproc_downscale_grayscale_4x,
 	&preproc_left_sobel,
 	&preproc_outline_sobel,
@@ -178,6 +187,7 @@ static IPreprocHandler* handlers[] = {
 	&preproc_diff_grayscale_abs,
 	&preproc_diff_grayscale_minus,
 	&preproc_downscale_diff_grayscale_minus_2x,
+	&preproc_downscale_diff_grayscale_minus_3x,
 	&preproc_downscale_diff_grayscale_minus_4x,
 	&preproc_diff_color_abs,
 	&preproc_diff_color_minus,

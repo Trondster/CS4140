@@ -49,7 +49,7 @@ public:
    }
     
    const char* get_name() override {
-      return "Diff Grayscale Abs";
+      return "Diff Gray Abs";
    }
 };
 
