@@ -219,7 +219,7 @@ void overwrite_previous_grayscale_with_diff_minus(const uint8_t* current_padded_
    for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
          int idx = (y + 1) * buf_img_w + (x + 1);
-         int diff = (255 - current_padded_grayscale_buf[idx] + previous_padded_grayscale_buf[idx]) / 2;
+         int diff = (255 - previous_padded_grayscale_buf[idx] + current_padded_grayscale_buf[idx]) / 2;
          previous_padded_grayscale_buf[idx] = (diff > gate_high || diff < gate_low) ? (uint8_t)diff : (uint8_t)128;
       }
    }
@@ -236,9 +236,9 @@ void overwrite_previous_frame_with_color_diff_minus(const uint8_t* current_frame
          int idx = y * width * bpp + x * bpp;
          uint16_t old_pixel = (previous_frame_buf[idx] << 8) | previous_frame_buf[idx + 1];
          uint16_t curr_pixel = (current_frame_buf[idx] << 8) | current_frame_buf[idx + 1];
-         int r_diff = (31 - ((curr_pixel >> 11) & 0x1F) + ((old_pixel >> 11) & 0x1F)) / 2;
-         int g_diff = (63 - ((curr_pixel >> 5) & 0x3F) + ((old_pixel >> 5) & 0x3F)) / 2;
-         int b_diff = (31 - (curr_pixel & 0x1F) + (old_pixel & 0x1F)) / 2;
+         int r_diff = (31 - ((old_pixel >> 11) & 0x1F) + ((curr_pixel >> 11) & 0x1F)) / 2;
+         int g_diff = (63 - ((old_pixel >> 5) & 0x3F) + ((curr_pixel >> 5) & 0x3F)) / 2;
+         int b_diff = (31 - (old_pixel & 0x1F) + (curr_pixel & 0x1F)) / 2;
 
          if (r_diff >= gate_low_5 && r_diff <= gate_high_5 &&
                g_diff >= gate_low_6 && g_diff <= gate_high_6 &&

@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <stddef.h>
+#include "pixel_calculation.hpp"
 
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>

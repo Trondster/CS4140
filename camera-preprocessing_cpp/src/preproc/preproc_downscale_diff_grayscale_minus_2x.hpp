@@ -54,7 +54,7 @@ public:
    }
     
    const char* get_name() override {
-      return "Downscale Diff Grayscale Minus 2x";
+      return "Downscale Diff 2x";
    }
 };
 
