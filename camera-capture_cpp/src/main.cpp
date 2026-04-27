@@ -313,9 +313,27 @@ int main()
 				int downscaled_4x4_width = IMG_W / 4; 
 
 				//Send the various buffers over UART with appropriate metadata, e.g.:
-				// uart_img_send(uart, current_frame_buf, frame_width, frame_height, 2, 1, drone ? "label=drone" : "label=clear");
+				uart_img_send(uart, current_frame_buf, frame_width, frame_height, 2, 1, drone ? "label=drone" : "label=clear", "folder=dataset/color", "current_frame.png");
+				k_msleep(10);
+				uart_img_send(uart, previous_frame_buf, frame_width, frame_height, 2, 1, drone ? "label=drone" : "label=clear", "folder=dataset/color", "previous_frame.png");
+				k_msleep(10);
+				uart_img_send(uart, unpadded_grayscale_buf, frame_width, frame_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/grey", "current_frame.png");
+				k_msleep(10);
+				uart_img_send(uart, diff_grayscale_buf, frame_width, frame_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/grey", "diff_frame.png");
+				k_msleep(10);
+				uart_img_send(uart, downscaled_2x2_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/2x2", "current_frame.png");
+				k_msleep(10);
+				uart_img_send(uart, downscaled_2x2_diff_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/2x2", "diff_frame.png");
+				k_msleep(10);
+				uart_img_send(uart, downscaled_3x3_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/3x3", "current_frame.png");
+				k_msleep(10);
+				uart_img_send(uart, downscaled_3x3_diff_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/3x3", "diff_frame.png");
+				k_msleep(10);
+				uart_img_send(uart, downscaled_4x4_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/4x4", "current_frame.png");
+				k_msleep(10);
+				uart_img_send(uart, downscaled_4x4_diff_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/4x4", "diff_frame.png");
 
-				LOG_INF("Sending data: label=%s", drone ? "drone" : "clear");
+				LOG_INF("Sent all data: label=%s", drone ? "drone" : "clear");
 			}
 
 			k_msleep(10);
