@@ -290,8 +290,10 @@ int main()
 				uint8_t* unpadded_grayscale_buf = preproc_diff_scaling.get_current_grayscale_nopad();
 				uint8_t* diff_grayscale_buf = preproc_diff_scaling.get_current_diff_grayscale_nopad();
 				uint8_t* downscaled_2x2_grayscale_buf = preproc_diff_scaling.get_current_grayscale_downscaled_2x2_nopad();
+				uint8_t* downscaled_3x3_grayscale_buf = preproc_diff_scaling.get_current_grayscale_downscaled_3x3_nopad();
 				uint8_t* downscaled_4x4_grayscale_buf = preproc_diff_scaling.get_current_grayscale_downscaled_4x4_nopad();
 				uint8_t* downscaled_2x2_diff_grayscale_buf = preproc_diff_scaling.get_current_diff_downscaled_2x2_nopad();
+				uint8_t* downscaled_3x3_diff_grayscale_buf = preproc_diff_scaling.get_current_diff_downscaled_3x3_nopad();
 				uint8_t* downscaled_4x4_diff_grayscale_buf = preproc_diff_scaling.get_current_diff_downscaled_4x4_nopad();
 
 				//Used for current_frame_buf, previous_frame_buf, unpadded_grayscale_buf, diff_grayscale_buf
@@ -301,6 +303,10 @@ int main()
 				//Used for downscaled_2x2_diff_grayscale_buf and downscaled_2x2_grayscale_buf
 				int downscaled_2x2_height = IMG_H / 2;
 				int downscaled_2x2_width = IMG_W / 2;
+
+				//Used for downscaled_3x3_diff_grayscale_buf and downscaled_3x3_grayscale_buf
+				int downscaled_3x3_height = IMG_H / 3;
+				int downscaled_3x3_width = IMG_W / 3;
 
 				//Used for downscaled_4x4_diff_grayscale_buf and downscaled_4x4_grayscale_buf
 				int downscaled_4x4_height = IMG_H / 4; 
