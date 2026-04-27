@@ -86,12 +86,20 @@ public:
       return current_grayscale_downscaled_2x2_nopad;
    }
 
+   uint8_t* get_current_grayscale_downscaled_3x3_nopad() {
+      return current_grayscale_downscaled_3x3_nopad;
+   }
+   
    uint8_t* get_current_grayscale_downscaled_4x4_nopad() {
       return current_grayscale_downscaled_4x4_nopad;
    }
 
    uint8_t* get_current_diff_downscaled_2x2_nopad() {
       return current_diff_downscaled_2x2_nopad;
+   }
+
+   uint8_t* get_current_diff_downscaled_3x3_nopad() {
+      return current_diff_downscaled_3x3_nopad;
    }
 
    uint8_t* get_current_diff_downscaled_4x4_nopad() {
