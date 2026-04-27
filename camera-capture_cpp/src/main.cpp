@@ -3,8 +3,8 @@
  *
  * sw0 (live)   → capture frame, freeze it on screen
  * sw0 (frozen) → return to live view
- * sw1 (frozen) → send frozen frame with metadata "label=drone"
- * sw2 (frozen) → send frozen frame with metadata "label=clear"
+ * sw1 (frozen) → send frozen frame with metadata "drone"
+ * sw2 (frozen) → send frozen frame with metadata "clear"
  */
 
 #include <cstdint>
@@ -270,15 +270,15 @@ int main()
 				if (sw1_flag) {
 					sw1_flag = false;
 					drone = true;
-					// LOG_INF("Sending: label=drone");
-					// uart_img_send(uart, frame_buf, 160, 120, 2, 1, "label=drone");
+					// LOG_INF("Sending: drone");
+					// uart_img_send(uart, frame_buf, 160, 120, 2, 1, "drone");
 					// tft_draw_bounding_box(display, 0, 0, 160, 120, "drone");
 					// LOG_INF("Done");
 				} else if (sw2_flag) {
 					sw2_flag = false;
 					drone = false;
-					// LOG_INF("Sending: label=clear");
-					// uart_img_send(uart, frame_buf, 160, 120, 2, 1, "label=clear");
+					// LOG_INF("Sending: clear");
+					// uart_img_send(uart, frame_buf, 160, 120, 2, 1, "clear");
 					// tft_draw_bounding_box(display, 0, 0, 160, 120, "clear");
 					// LOG_INF("Done");
 				}
@@ -313,27 +313,27 @@ int main()
 				int downscaled_4x4_width = IMG_W / 4; 
 
 				//Send the various buffers over UART with appropriate metadata, e.g.:
-				uart_img_send(uart, current_frame_buf, frame_width, frame_height, 2, 1, drone ? "label=drone" : "label=clear", "folder=dataset/color", "current_frame.png");
+				uart_img_send(uart, current_frame_buf, frame_width, frame_height, 2, 1, drone ? "drone" : "clear", "dataset/color", "current_frame.png");
 				k_msleep(10);
-				uart_img_send(uart, previous_frame_buf, frame_width, frame_height, 2, 1, drone ? "label=drone" : "label=clear", "folder=dataset/color", "previous_frame.png");
+				uart_img_send(uart, previous_frame_buf, frame_width, frame_height, 2, 1, drone ? "drone" : "clear", "dataset/color", "previous_frame.png");
 				k_msleep(10);
-				uart_img_send(uart, unpadded_grayscale_buf, frame_width, frame_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/grey", "current_frame.png");
+				uart_img_send(uart, unpadded_grayscale_buf, frame_width, frame_height, 1, 1, drone ? "drone" : "clear", "dataset/grey", "current_frame.png");
 				k_msleep(10);
-				uart_img_send(uart, diff_grayscale_buf, frame_width, frame_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/grey", "diff_frame.png");
+				uart_img_send(uart, diff_grayscale_buf, frame_width, frame_height, 1, 1, drone ? "drone" : "clear", "dataset/grey", "diff_frame.png");
 				k_msleep(10);
-				uart_img_send(uart, downscaled_2x2_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/2x2", "current_frame.png");
+				uart_img_send(uart, downscaled_2x2_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone ? "drone" : "clear", "dataset/2x2", "current_frame.png");
 				k_msleep(10);
-				uart_img_send(uart, downscaled_2x2_diff_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/2x2", "diff_frame.png");
+				uart_img_send(uart, downscaled_2x2_diff_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone ? "drone" : "clear", "dataset/2x2", "diff_frame.png");
 				k_msleep(10);
-				uart_img_send(uart, downscaled_3x3_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/3x3", "current_frame.png");
+				uart_img_send(uart, downscaled_3x3_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone ? "drone" : "clear", "dataset/3x3", "current_frame.png");
 				k_msleep(10);
-				uart_img_send(uart, downscaled_3x3_diff_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/3x3", "diff_frame.png");
+				uart_img_send(uart, downscaled_3x3_diff_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone ? "drone" : "clear", "dataset/3x3", "diff_frame.png");
 				k_msleep(10);
-				uart_img_send(uart, downscaled_4x4_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/4x4", "current_frame.png");
+				uart_img_send(uart, downscaled_4x4_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone ? "drone" : "clear", "dataset/4x4", "current_frame.png");
 				k_msleep(10);
-				uart_img_send(uart, downscaled_4x4_diff_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone ? "label=drone" : "label=clear", "folder=dataset/4x4", "diff_frame.png");
+				uart_img_send(uart, downscaled_4x4_diff_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone ? "drone" : "clear", "dataset/4x4", "diff_frame.png");
 
-				LOG_INF("Sent all data: label=%s", drone ? "drone" : "clear");
+				LOG_INF("Sent all data: %s", drone ? "drone" : "clear");
 			}
 
 			k_msleep(10);
