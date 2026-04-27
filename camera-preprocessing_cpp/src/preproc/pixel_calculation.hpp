@@ -101,6 +101,30 @@ void calculate_grayscale_image_3(const uint8_t* input_buf, uint8_t* padded_grays
    }
 }
 
+void downscale_grayscale_image(const uint8_t* padded_grayscale_buf, uint8_t* padded_output_grayscale_buf,
+   const int width, const int height, const int conversion_factor) {
+   int buf_img_w = width + 2;
+   for (int y = conversion_factor; y < height; y += conversion_factor) {
+      for (int x = conversion_factor; x < width; x += conversion_factor) {
+         int idx = (y + 1) * buf_img_w + (x + 1);
+         int aggregate_gray = 0;
+         
+         for (int dy = 0; dy < conversion_factor; dy++) {
+            for (int dx = 0; dx < conversion_factor; dx++) {
+               aggregate_gray += padded_grayscale_buf[idx + dy * buf_img_w + dx];
+            }
+         }
+         uint8_t downscaled_gray = aggregate_gray / (conversion_factor * conversion_factor);
+
+         for (int dy = 0; dy < conversion_factor; dy++) {
+            for (int dx = 0; dx < conversion_factor; dx++) {
+               padded_output_grayscale_buf[idx + dy * buf_img_w + dx] = downscaled_gray;
+            }
+         }
+      }
+   }
+}
+
 void convert_grayscale_to_rgb565(const uint8_t* padded_grayscale_buf, uint8_t* output_buf,
    const int width, const int height,const int bpp) {
    int buf_img_w = width + 2;

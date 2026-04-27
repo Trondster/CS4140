@@ -31,6 +31,10 @@
 #include "preproc/preproc_diff_color_abs.hpp"
 #include "preproc/preproc_diff_color_minus.hpp"
 #include "preproc/preproc_outline_sobel.hpp"
+#include "preproc/preproc_downscale_grayscale_2x.hpp"
+#include "preproc/preproc_downscale_grayscale_4x.hpp"
+#include "preproc/preproc_downscale_diff_grayscale_minus_2x.hpp"
+#include "preproc/preproc_downscale_diff_grayscale_minus_4x.hpp"
 
 #define FRAME_RATE        5
 #define FRAME_INTERVAL_MS (1000 / FRAME_RATE)
@@ -148,17 +152,33 @@ static PreprocDiffColorAbs preproc_diff_color_abs = PreprocDiffColorAbs(frame_bu
 static PreprocDiffColorMinus preproc_diff_color_minus = PreprocDiffColorMinus(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
 	IMG_H, IMG_W, IMG_BPP);
 
+static PreprocDownscaleGrayscale2x preproc_downscale_grayscale_2x = PreprocDownscaleGrayscale2x(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
+	IMG_H, IMG_W, IMG_BPP);
+
+static PreprocDownscaleGrayscale4x preproc_downscale_grayscale_4x = PreprocDownscaleGrayscale4x(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
+	IMG_H, IMG_W, IMG_BPP);
+
+static PreprocDownscaleDiffGrayscaleMinus2x preproc_downscale_diff_grayscale_minus_2x = PreprocDownscaleDiffGrayscaleMinus2x(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
+	IMG_H, IMG_W, IMG_BPP);
+
+static PreprocDownscaleDiffGrayscaleMinus4x preproc_downscale_diff_grayscale_minus_4x = PreprocDownscaleDiffGrayscaleMinus4x(frame_buf, second_frame_buf, grayscale_buf, second_grayscale_buf,
+	IMG_H, IMG_W, IMG_BPP);
+
 //Inline array of pointers to the handlers, so that we can easily loop through them if we want to.
 static IPreprocHandler* handlers[] = {
 	&preproc_direct,
 	&preproc_grayscale,
 	// &preproc_grayscale2,
 	// &preproc_grayscale3,
+	&preproc_downscale_grayscale_2x,
+	&preproc_downscale_grayscale_4x,
 	&preproc_left_sobel,
 	&preproc_outline_sobel,
 	// &preproc_diff_direct,
 	&preproc_diff_grayscale_abs,
 	&preproc_diff_grayscale_minus,
+	&preproc_downscale_diff_grayscale_minus_2x,
+	&preproc_downscale_diff_grayscale_minus_4x,
 	&preproc_diff_color_abs,
 	&preproc_diff_color_minus,
 };
@@ -167,7 +187,7 @@ void show_handler(IPreprocHandler* handler, struct device* display) {
 	handler->process(); //Process one frame immediately, to show something on the display right away.
 	LOG_INF("Using handler: %s", handler->get_name());
 	tft_draw_bounding_box(display, 0, 0, 160, 120, handler->get_name());
-	k_msleep(500);
+	k_msleep(300);
 }
 
 int main()
