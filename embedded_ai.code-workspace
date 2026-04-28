@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "lib"
+		},
+		{
+			"name": "camera-show-on-screen",
+			"path": "camera-show-on-screen"
+		},
+		{
+			"name": "camera-preprocessing_cpp",
+			"path": "camera-preprocessing_cpp"
+		},
+		{
+			"name": "camera-capture_cpp",
+			"path": "camera-capture_cpp"
+		}
+	],
+	"settings": {}
+}
