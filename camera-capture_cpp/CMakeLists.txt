@@ -9,4 +9,5 @@ target_sources(app PRIVATE
     src/fifo.c
     src/tft_display.c
     src/uart_img_send.c
+    src/pixel_conversion.c
 )

@@ -83,6 +83,23 @@ void tft_draw_string(const struct device *dev, int x, int y, const char *str,
 void tft_draw_image(const struct device *dev, int x, int y, int w, int h,
 		    const uint8_t *rgb565);
 
+/**
+ * tft_draw_grayscale_image - Blit a raw grayscale frame buffer onto the display using a buffer to render the grayscale to RGB565.
+ *
+ * @dev:    Display device
+ * @x:      Top-left column
+ * @y:      Top-left row
+ * @w:      Image width in pixels
+ * @h:      Image height in pixels
+ * @grayscale: Row-major grayscale buffer, 1 byte per pixel
+ * @padded_grayscale: Whether the grayscale buffer has padding
+ *
+ * Suitable for displaying grayscale camera frames:
+ *   tft_draw_grayscale_image(dev, 0, 0, 160, 128, grayscale_buf, false);
+ */
+void tft_draw_grayscale_image(const struct device *dev, int x, int y, int w, int h,
+			      const uint8_t *grayscale, bool padded_grayscale);
+
 /* ── Computer-vision overlays ───────────────────────────────────────────── */
 
 /**
