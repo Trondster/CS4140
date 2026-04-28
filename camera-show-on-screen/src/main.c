@@ -10,9 +10,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include "ov7670.h"
-#include "fifo.h"
-#include "tft_display.h"
+#include "../../lib/c/ov7670.h"
+#include "../../lib/c/fifo.h"
+#include "../../lib/c/tft_display.h"
 
 #define FRAME_RATE 5
 #define FRAME_INTERVAL_MS (1000 / FRAME_RATE)

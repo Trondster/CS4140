@@ -5,9 +5,9 @@ project(camera-image-gathering)
 
 target_sources(app PRIVATE
     src/main.cpp
-    src/ov7670.c
-    src/fifo.c
-    src/tft_display.c
-    src/uart_img_send.c
-    src/pixel_conversion.c
+    ../lib/c/ov7670.c
+    ../lib/c/fifo.c
+    ../lib/c/tft_display.c
+    ../lib/c/uart_img_send.c
+    ../lib/c/pixel_conversion.c
 )

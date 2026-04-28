@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "../pixel_conversion.h"
+#include "../../c/pixel_conversion.h"
 
 #define PER_COLOR_DIFF_GATE_VALUE 1
 #define GRAYSCALE_DIFF_GATE_VALUE 3

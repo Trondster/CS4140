@@ -5,7 +5,7 @@ project(camera-show-screen)
 
 target_sources(app PRIVATE
     src/main.c
-    src/ov7670.c
-    src/fifo.c
-    src/tft_display.c
+    ../lib/c/ov7670.c
+    ../lib/c/fifo.c
+    ../lib/c/tft_display.c
 )

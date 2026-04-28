@@ -15,12 +15,27 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/logging/log.h>
 
-#include "ov7670.h"
-#include "fifo.h"
-#include "tft_display.h"
-#include "uart_img_send.h"
+#include "../../lib/c/ov7670.h"
+#include "../../lib/c/fifo.h"
+#include "../../lib/c/tft_display.h"
+#include "../../lib/c/uart_img_send.h"
 
-#include "preproc/preproc_diff_scaling.hpp"
+// #include "../../lib/cpp/preproc/preproc_direct.hpp"
+// #include "../../lib/cpp/preproc/preproc_grayscale.hpp"
+// #include "../../lib/cpp/preproc/preproc_grayscale2.hpp"
+// #include "../../lib/cpp/preproc/preproc_grayscale3.hpp"
+// #include "../../lib/cpp/preproc/preproc_left_sobel.hpp"
+// #include "../../lib/cpp/preproc/preproc_diff_direct.hpp"
+// #include "../../lib/cpp/preproc/preproc_diff_grayscale_abs.hpp"
+// #include "../../lib/cpp/preproc/preproc_diff_grayscale_minus.hpp"
+// #include "../../lib/cpp/preproc/preproc_diff_color_abs.hpp"
+// #include "../../lib/cpp/preproc/preproc_diff_color_minus.hpp"
+// #include "../../lib/cpp/preproc/preproc_outline_sobel.hpp"
+// #include "../../lib/cpp/preproc/preproc_downscale_grayscale_2x.hpp"
+// #include "../../lib/cpp/preproc/preproc_downscale_grayscale_4x.hpp"
+// #include "../../lib/cpp/preproc/preproc_downscale_diff_grayscale_minus_2x.hpp"
+// #include "../../lib/cpp/preproc/preproc_downscale_diff_grayscale_minus_4x.hpp"
+#include "../../lib/cpp/preproc/preproc_diff_scaling.hpp"
 
 #define FRAME_RATE 5
 #define FRAME_INTERVAL_MS (1000 / FRAME_RATE)
@@ -163,6 +178,7 @@ int main()
 	show_handler(&preproc_diff_scaling, const_cast<device *>(display));
 
 	bool showing_grayscale = true;
+	bool was_grayscale = true;
 	while (true)
 	{
 		/* sw0: toggle between live view and frozen frame */
@@ -171,6 +187,7 @@ int main()
 			sw0_flag = false;
 			if (app_state == AppState::LIVE)
 			{
+				was_grayscale = showing_grayscale;
 				preproc_diff_scaling.process();
 				app_state = AppState::FROZEN;
 				LOG_INF("Frame frozen using handler %s", preproc_diff_scaling.get_name());
@@ -189,7 +206,9 @@ int main()
 				app_state = AppState::LIVE;
 				LOG_INF("Back to live view using handler %s", preproc_diff_scaling.get_name());
 				preproc_diff_scaling.process();
-				show_handler(&preproc_diff_scaling, const_cast<device *>(display));
+				showing_grayscale = was_grayscale;
+				tft_draw_bounding_box(display, 0, 0, 160, 120, showing_grayscale ? "live grayscale" : "live diff");
+				k_msleep(100);
 			}
 		}
 

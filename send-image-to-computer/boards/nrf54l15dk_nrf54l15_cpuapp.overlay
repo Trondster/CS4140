@@ -1,4 +1,0 @@
-/* Set console UART to 1 Mbaud for image transfer */
-&uart20 {
-	current-speed = <1000000>;
-};
