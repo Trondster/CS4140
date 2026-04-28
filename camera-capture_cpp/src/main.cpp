@@ -253,28 +253,37 @@ int main()
 				tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_nopad(), false);
 				tft_draw_bounding_box(display, 0, 0, 160, 120, drone ? "sending drone" : "sending clear");
 
-				// Send the various buffers over UART with appropriate metadata, e.g.:
-				uart_img_send(uart, current_frame_buf, frame_width, frame_height, 2, 1, drone ? "drone" : "clear", "dataset/color", "current_frame.png");
-				k_msleep(10);
-				uart_img_send(uart, previous_frame_buf, frame_width, frame_height, 2, 1, drone ? "drone" : "clear", "dataset/color", "previous_frame.png");
-				k_msleep(10);
-				uart_img_send(uart, unpadded_grayscale_buf, frame_width, frame_height, 1, 1, drone ? "drone" : "clear", "dataset/grey", "current_frame.png");
-				k_msleep(10);
-				uart_img_send(uart, diff_grayscale_buf, frame_width, frame_height, 1, 1, drone ? "drone" : "clear", "dataset/grey", "diff_frame.png");
-				k_msleep(10);
-				uart_img_send(uart, downscaled_2x2_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone ? "drone" : "clear", "dataset/2x2", "current_frame.png");
-				k_msleep(10);
-				uart_img_send(uart, downscaled_2x2_diff_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone ? "drone" : "clear", "dataset/2x2", "diff_frame.png");
-				k_msleep(10);
-				uart_img_send(uart, downscaled_3x3_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone ? "drone" : "clear", "dataset/3x3", "current_frame.png");
-				k_msleep(10);
-				uart_img_send(uart, downscaled_3x3_diff_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone ? "drone" : "clear", "dataset/3x3", "diff_frame.png");
-				k_msleep(10);
-				uart_img_send(uart, downscaled_4x4_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone ? "drone" : "clear", "dataset/4x4", "current_frame.png");
-				k_msleep(10);
-				uart_img_send(uart, downscaled_4x4_diff_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone ? "drone" : "clear", "dataset/4x4", "diff_frame.png");
+				int64_t timestamp = k_uptime_get();
 
-				LOG_INF("Sent all data: %s", drone ? "drone" : "clear");
+				char prefix[30];
+				char current_frame_filename[64];
+				char previous_frame_filename[64];
+				char diff_frame_filename[64];
+
+				snprintf(prefix, sizeof(prefix), "%llu_%s_", timestamp, drone ? "drone" : "clear");
+				snprintf(current_frame_filename, sizeof(current_frame_filename), "%scurrent_frame.png", prefix);
+				snprintf(previous_frame_filename, sizeof(previous_frame_filename), "%sprevious_frame.png", prefix);
+				snprintf(diff_frame_filename, sizeof(diff_frame_filename), "%sdiff_frame.png", prefix);
+				k_msleep(10);
+				uart_img_send(uart, previous_frame_buf, frame_width, frame_height, 2, 1, drone ? "drone" : "clear", "dataset/color", previous_frame_filename);
+				k_msleep(10);
+				uart_img_send(uart, unpadded_grayscale_buf, frame_width, frame_height, 1, 1, drone ? "drone" : "clear", "dataset/grey", current_frame_filename);
+				k_msleep(10);
+				uart_img_send(uart, diff_grayscale_buf, frame_width, frame_height, 1, 1, drone ? "drone" : "clear", "dataset/grey", diff_frame_filename);
+				k_msleep(10);
+				uart_img_send(uart, downscaled_2x2_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone ? "drone" : "clear", "dataset/2x2", current_frame_filename);
+				k_msleep(10);
+				uart_img_send(uart, downscaled_2x2_diff_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone ? "drone" : "clear", "dataset/2x2", diff_frame_filename);
+				k_msleep(10);
+				uart_img_send(uart, downscaled_3x3_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone ? "drone" : "clear", "dataset/3x3", current_frame_filename);
+				k_msleep(10);
+				uart_img_send(uart, downscaled_3x3_diff_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone ? "drone" : "clear", "dataset/3x3", diff_frame_filename);
+				k_msleep(10);
+				uart_img_send(uart, downscaled_4x4_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone ? "drone" : "clear", "dataset/4x4", current_frame_filename);
+				k_msleep(10);
+				uart_img_send(uart, downscaled_4x4_diff_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone ? "drone" : "clear", "dataset/4x4", diff_frame_filename);
+
+				LOG_INF("Sent all data: %s", prefix);
 				app_state = AppState::LIVE;
 				preproc_diff_scaling.process();
 				showing_grayscale = true;
