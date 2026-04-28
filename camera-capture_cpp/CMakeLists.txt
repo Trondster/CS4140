@@ -9,4 +9,5 @@ target_sources(app PRIVATE
     ../lib/c/fifo.c
     ../lib/c/tft_display.c
     ../lib/c/uart_img_send.c
+    ../lib/c/pixel_conversion.c
 )

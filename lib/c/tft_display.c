@@ -3,6 +3,7 @@
 #include <string.h>
 #include <zephyr/drivers/display.h>
 #include <errno.h>
+#include "pixel_conversion.h"
 
 /* ── 5×7 bitmap font, ASCII 32–126 ─────────────────────────────────────── */
 /* Column-major encoding: each byte = one column, bit 0 = top row.         */
@@ -239,6 +240,30 @@ void tft_draw_image(const struct device *dev, int x, int y, int w, int h,
 	for (int row = 0; row < h; row++) {
 		display_write(dev, x, y + row, &d,
 			      rgb565 + row * w * TFT_BPP);
+	}
+}
+
+static uint8_t grayscale_row_buf[TFT_WIDTH * TFT_BPP];
+
+void tft_draw_grayscale_image(const struct device *dev, int x, int y, int w, int h,
+			      const uint8_t *grayscale, bool padded_grayscale)
+{
+	struct display_buffer_descriptor d = {
+		.buf_size = (uint32_t)(w * TFT_BPP),
+		.width    = (uint16_t)w,
+		.height   = 1,
+		.pitch    = (uint16_t)w,
+	};
+	for (int row = 0; row < h; row++) {
+		for (int col = 0; col < w; ++col)
+		{
+			int grayidx = padded_grayscale ? (row + 1) * (w + 2) + (col + 1) : row * w + col;
+			uint16_t rgb565_pixel = calculate_rgb565(grayscale[grayidx]);
+			grayscale_row_buf[col * 2]     = (rgb565_pixel >> 8) & 0xFF;
+			grayscale_row_buf[col * 2 + 1] = rgb565_pixel & 0xFF;
+		}
+
+		display_write(dev, x, y + row, &d, grayscale_row_buf);
 	}
 }
 

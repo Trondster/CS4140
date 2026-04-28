@@ -63,7 +63,7 @@ public:
       strip_grayscale_padding(previous_grayscale_buf, current_diff_nopad, width, height);
 
       //Print the original color image to the display.
-      tft_draw_image(display, 0, 0, width, height, current_frame_buf);
+      //tft_draw_image(display, 0, 0, width, height, current_frame_buf);
    }
 
    uint8_t* get_current_frame_buf() {
