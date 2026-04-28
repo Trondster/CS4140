@@ -179,12 +179,12 @@ int main()
 
 	bool showing_grayscale = true;
 	bool was_grayscale = true;
+	uint64_t generated_timestamp = 0;
 	while (true)
 	{
 		/* sw0: toggle between live view and frozen frame */
 		if (sw0_flag)
 		{
-			sw0_flag = false;
 			if (app_state == AppState::LIVE)
 			{
 				was_grayscale = showing_grayscale;
@@ -203,13 +203,16 @@ int main()
 			}
 			else
 			{
+				generated_timestamp = 0;
 				app_state = AppState::LIVE;
 				LOG_INF("Back to live view using handler %s", preproc_diff_scaling.get_name());
 				preproc_diff_scaling.process();
 				showing_grayscale = was_grayscale;
 				tft_draw_bounding_box(display, 0, 0, 160, 120, showing_grayscale ? "live grayscale" : "live diff");
-				k_msleep(100);
+				k_msleep(200);
 			}
+
+			sw0_flag = false;
 		}
 
 		if (app_state == AppState::FROZEN)
@@ -253,14 +256,16 @@ int main()
 				tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_nopad(), false);
 				tft_draw_bounding_box(display, 0, 0, 160, 120, drone ? "sending drone" : "sending clear");
 
-				int64_t timestamp = k_uptime_get();
+				if (generated_timestamp == 0) {
+					generated_timestamp = k_uptime_get();
+				}
 
 				char prefix[30];
 				char current_frame_filename[64];
 				char previous_frame_filename[64];
 				char diff_frame_filename[64];
 
-				snprintf(prefix, sizeof(prefix), "%llu_%s_", timestamp, drone ? "drone" : "clear");
+				snprintf(prefix, sizeof(prefix), "%llu_%s_", generated_timestamp, drone ? "drone" : "clear");
 				snprintf(current_frame_filename, sizeof(current_frame_filename), "%scurrent_frame.png", prefix);
 				snprintf(previous_frame_filename, sizeof(previous_frame_filename), "%sprevious_frame.png", prefix);
 				snprintf(diff_frame_filename, sizeof(diff_frame_filename), "%sdiff_frame.png", prefix);
@@ -284,11 +289,12 @@ int main()
 				uart_img_send(uart, downscaled_4x4_diff_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone ? "drone" : "clear", "dataset/4x4", diff_frame_filename);
 
 				LOG_INF("Sent all data: %s", prefix);
-				app_state = AppState::LIVE;
-				preproc_diff_scaling.process();
 				showing_grayscale = true;
 				tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_nopad(), false);
-				tft_draw_bounding_box(display, 0, 0, 160, 120, "LIVE");
+				tft_draw_bounding_box(display, 0, 0, 160, 120, prefix);
+				k_msleep(300);
+				sw1_flag = false;
+				sw2_flag = false;
 			}
 			else
 			{
