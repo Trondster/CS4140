@@ -25,4 +25,4 @@ tags
 .vscode
 sanity-out*
 twister-out*
-
+*.code-workspace
