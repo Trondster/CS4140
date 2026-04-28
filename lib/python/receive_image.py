@@ -50,11 +50,27 @@ try:
 except ImportError:
     sys.exit("Pillow not found — run:  pip install pillow")
 
+try:
+    import colorama
+    colorama.init()
+except ImportError:
+    pass
+
 BAUD_RATE = 1_000_000
 FRAME_SOF = bytes([0xDE, 0xAD, 0xBE, 0xEF])
 FRAME_EOF = bytes([0xCA, 0xFE, 0xBA, 0xBE])
+ACK = bytes([0x06])
+NAK = bytes([0x15])
 
 _FMT_NAMES = {1: "greyscale", 2: "RGB565", 3: "RGB888"}
+
+RED = "\033[31m"
+RESET = "\033[0m"
+
+previous_file_prefix = ""
+
+def error_line(message: str) -> None:
+    print(f"{RED}{message}{RESET}", file=sys.stderr)
 
 
 def extract_meta_field(metadata: str, key: str) -> str:
@@ -124,7 +140,8 @@ def receive_frames(port: str, default_folder: str, default_filename: str) -> Non
 
             hdr = ser.read(8)
             if len(hdr) < 8:
-                print("Timeout reading header, retrying ...")
+                error_line("Timeout reading header, retrying ...")
+                ser.write(NAK)
                 continue
 
             width, height = struct.unpack_from("<HH", hdr, 0)
@@ -137,30 +154,41 @@ def receive_frames(port: str, default_folder: str, default_filename: str) -> Non
             if meta_len > 0:
                 raw = ser.read(meta_len)
                 if len(raw) < meta_len:
-                    print("Timeout reading metadata, retrying ...")
+                    error_line("Timeout reading metadata, retrying ...")
+                    ser.write(NAK)
                     continue
                 metadata = raw.decode("utf-8", errors="replace")
 
             fmt_name = _FMT_NAMES.get(bpp, f"{bpp}bpp")
-            print(f"Frame incoming: {width}×{height}, {fmt_name}, "
-                  f"{'big' if big_endian else 'little'}-endian, {size} bytes")
-            if metadata:
-                print(f"  Metadata: {metadata}")
-
-            data = ser.read(size)
-            if len(data) < size:
-                print(f"  Truncated ({len(data)}/{size} bytes) — skipping")
-                continue
-
-            eof = ser.read(len(FRAME_EOF))
-            if eof != FRAME_EOF:
-                print(f"  Bad end marker: {eof.hex()} — skipping")
-                continue
+            #print(f"Frame incoming: {width}×{height}, {fmt_name}, "
+                  #f"{'big' if big_endian else 'little'}-endian, {size} bytes")
+            #if metadata:
+                #print(f"  Metadata: {metadata}")
 
             # Resolve folder, label, filename — metadata takes precedence over CLI defaults
             folder   = extract_meta_field(metadata, "folder")   or default_folder
             label    = extract_meta_field(metadata, "label")
             filename = extract_meta_field(metadata, "filename") or default_filename
+
+            filename_prefix = filename.split("_")[0] if filename else ""
+            global previous_file_prefix
+            if filename_prefix != previous_file_prefix:
+                print()
+                previous_file_prefix = filename_prefix
+
+            data = ser.read(size)
+            if len(data) < size:
+                error_line(f"  Truncated ({len(data)}/{size} bytes) — sent NACK {filename}")
+                ser.write(NAK)
+                continue
+
+            eof = ser.read(len(FRAME_EOF))
+            if eof != FRAME_EOF:
+                error_line(f"  Bad end marker: {eof.hex()} — sent NACK {filename}")
+                ser.write(NAK)
+                continue
+
+            ser.write(ACK)
 
             # Build output directory: [folder/][label/]
             parts = [p for p in [folder, label] if p]
@@ -172,13 +200,17 @@ def receive_frames(port: str, default_folder: str, default_filename: str) -> Non
                 filename = f"frame_{frame_count:04d}_{int(time.time())}.png"
 
             filepath = os.path.join(outdir, filename)
+            if os.path.exists(filepath):
+                print(f"  Skipping save: file already exists: {filepath}")
+                continue
+
             img = pixels_to_image(data, width, height, big_endian, bpp)
 
             png_meta = PngImagePlugin.PngInfo()
             if metadata:
                 png_meta.add_text("metadata", metadata)
             img.save(filepath, pnginfo=png_meta)
-            print(f"  Saved: {filepath}\n")
+            print(f"  Saved: {filepath}")
 
 
 if __name__ == "__main__":

@@ -41,6 +41,8 @@
 #define FRAME_INTERVAL_MS (1000 / FRAME_RATE)
 #define DEBOUNCE_MS 80
 
+#define RETRY_TRANSMISSIONS_ON_FAILURE 10
+
 LOG_MODULE_REGISTER(app, LOG_LEVEL_INF);
 
 static uint8_t frame_buf[IMG_SIZE] __aligned(4);
@@ -270,25 +272,25 @@ int main()
 				snprintf(previous_frame_filename, sizeof(previous_frame_filename), "%sprevious_frame.png", prefix);
 				snprintf(diff_frame_filename, sizeof(diff_frame_filename), "%sdiff_frame.png", prefix);
 				const char* drone_or_clear = drone ? "drone" : "clear";
-				uart_img_send(uart, current_frame_buf, frame_width, frame_height, 2, 1, drone_or_clear, "dataset/color", current_frame_filename);
+				uart_img_send(uart, current_frame_buf, frame_width, frame_height, 2, 1, drone_or_clear, "dataset/color", current_frame_filename, RETRY_TRANSMISSIONS_ON_FAILURE);
 				k_msleep(10);
-				uart_img_send(uart, previous_frame_buf, frame_width, frame_height, 2, 1, drone_or_clear, "dataset/color", previous_frame_filename);
+				uart_img_send(uart, previous_frame_buf, frame_width, frame_height, 2, 1, drone_or_clear, "dataset/color", previous_frame_filename, RETRY_TRANSMISSIONS_ON_FAILURE);
 				k_msleep(10);
-				uart_img_send(uart, unpadded_grayscale_buf, frame_width, frame_height, 1, 1, drone_or_clear, "dataset/grey", current_frame_filename);
+				uart_img_send(uart, unpadded_grayscale_buf, frame_width, frame_height, 1, 1, drone_or_clear, "dataset/grey", current_frame_filename, RETRY_TRANSMISSIONS_ON_FAILURE);
 				k_msleep(10);
-				uart_img_send(uart, diff_grayscale_buf, frame_width, frame_height, 1, 1, drone_or_clear, "dataset/grey", diff_frame_filename);
+				uart_img_send(uart, diff_grayscale_buf, frame_width, frame_height, 1, 1, drone_or_clear, "dataset/grey", diff_frame_filename, RETRY_TRANSMISSIONS_ON_FAILURE);
 				k_msleep(10);
-				uart_img_send(uart, downscaled_2x2_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone_or_clear, "dataset/2x2", current_frame_filename);
+				uart_img_send(uart, downscaled_2x2_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone_or_clear, "dataset/2x2", current_frame_filename, RETRY_TRANSMISSIONS_ON_FAILURE);
 				k_msleep(10);
-				uart_img_send(uart, downscaled_2x2_diff_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone_or_clear, "dataset/2x2", diff_frame_filename);
+				uart_img_send(uart, downscaled_2x2_diff_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, 1, drone_or_clear, "dataset/2x2", diff_frame_filename, RETRY_TRANSMISSIONS_ON_FAILURE);
 				k_msleep(10);
-				uart_img_send(uart, downscaled_3x3_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone_or_clear, "dataset/3x3", current_frame_filename);
+				uart_img_send(uart, downscaled_3x3_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone_or_clear, "dataset/3x3", current_frame_filename, RETRY_TRANSMISSIONS_ON_FAILURE);
 				k_msleep(10);
-				uart_img_send(uart, downscaled_3x3_diff_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone_or_clear, "dataset/3x3", diff_frame_filename);
+				uart_img_send(uart, downscaled_3x3_diff_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, 1, drone_or_clear, "dataset/3x3", diff_frame_filename, RETRY_TRANSMISSIONS_ON_FAILURE);
 				k_msleep(10);
-				uart_img_send(uart, downscaled_4x4_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone_or_clear, "dataset/4x4", current_frame_filename);
+				uart_img_send(uart, downscaled_4x4_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone_or_clear, "dataset/4x4", current_frame_filename, RETRY_TRANSMISSIONS_ON_FAILURE);
 				k_msleep(10);
-				uart_img_send(uart, downscaled_4x4_diff_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone_or_clear, "dataset/4x4", diff_frame_filename);
+				uart_img_send(uart, downscaled_4x4_diff_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, 1, drone_or_clear, "dataset/4x4", diff_frame_filename, RETRY_TRANSMISSIONS_ON_FAILURE);
 
 				LOG_INF("Sent all data: %s", prefix);
 				showing_grayscale = true;
