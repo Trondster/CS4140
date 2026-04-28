@@ -56,6 +56,8 @@ try:
 except ImportError:
     pass
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 BAUD_RATE = 1_000_000
 FRAME_SOF = bytes([0xDE, 0xAD, 0xBE, 0xEF])
 FRAME_EOF = bytes([0xCA, 0xFE, 0xBA, 0xBE])
@@ -165,10 +167,10 @@ def receive_frames(port: str, default_folder: str, default_filename: str) -> Non
             #if metadata:
                 #print(f"  Metadata: {metadata}")
 
-            # Resolve folder, label, filename — metadata takes precedence over CLI defaults
-            folder   = extract_meta_field(metadata, "folder")   or default_folder
-            label    = extract_meta_field(metadata, "label")
-            filename = extract_meta_field(metadata, "filename") or default_filename
+            # Resolve label, filename — metadata folder/label are subfolders within default_folder
+            meta_folder = extract_meta_field(metadata, "folder")
+            label       = extract_meta_field(metadata, "label")
+            filename    = extract_meta_field(metadata, "filename") or default_filename
 
             filename_prefix = filename.split("_")[0] if filename else ""
             global previous_file_prefix
@@ -190,9 +192,9 @@ def receive_frames(port: str, default_folder: str, default_filename: str) -> Non
 
             ser.write(ACK)
 
-            # Build output directory: [folder/][label/]
-            parts = [p for p in [folder, label] if p]
-            outdir = os.path.join(*parts) if parts else "."
+            # Build output directory: default_folder / [meta_folder/] [label/]
+            subparts = [p for p in [meta_folder, label] if p]
+            outdir = os.path.join(default_folder, *subparts)
             os.makedirs(outdir, exist_ok=True)
 
             if not filename:
@@ -220,8 +222,8 @@ if __name__ == "__main__":
         epilog=__doc__)
     parser.add_argument("port",
                         help="Serial port (e.g. COM4 or /dev/ttyACM0)")
-    parser.add_argument("--folder", default="",
-                        help="Fallback base output folder (default: current directory)")
+    parser.add_argument("--folder", default=os.path.abspath(os.path.join(BASE_DIR, "../../train/dataset")),
+                        help="Fallback base output folder (default: dataset/ next to this script)")
     parser.add_argument("--filename", default="",
                         help="Fallback output filename (default: frame_NNNN_TIMESTAMP.png)")
     args = parser.parse_args()
