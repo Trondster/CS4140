@@ -1,0 +1,20 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+
+# Claude Code
+.claude/
+
+# OS
+Thumbs.db
+.DS_Store
