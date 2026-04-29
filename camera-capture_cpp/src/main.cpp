@@ -191,6 +191,15 @@ int main()
 	bool showing_grayscale = true;
 	bool was_grayscale = true;
 	uint64_t generated_timestamp = 0;
+
+	int32_t sleep_timeouts[] = {
+		0,
+		50,
+		100,
+		200,
+		400,
+	};
+	size_t sleep_timeout_idx = 0;
 	while (true)
 	{
 		/* sw0: toggle between live view and frozen frame */
@@ -360,6 +369,8 @@ int main()
 				showing_grayscale = !showing_grayscale;
 			}
 
+			bool sw2_pressed = sw2_flag;
+
 			// next = k_uptime_get();
 			preproc_diff_scaling.process();
 			uint8_t* active_grayscale = showing_grayscale ? preproc_diff_scaling.get_current_grayscale_padded() : preproc_diff_scaling.get_current_diff_grayscale_padded();
@@ -371,10 +382,19 @@ int main()
 				tft_draw_bounding_box(display, 0, 0, 160, 120, showing_grayscale ? "grayscale" : "diff");
 				k_msleep(100);
 				sw1_flag = false;
+				sw2_flag = false;
+			} else if (sw2_pressed) {
+				//Go to the next index in the loop;
+				sleep_timeout_idx = (sleep_timeout_idx + 1) % (sizeof(sleep_timeouts) / sizeof(int32_t));
+				char buffer[12];
+				snprintf(buffer, sizeof(buffer), "%d", sleep_timeouts[sleep_timeout_idx]); // Convert to string
+				tft_draw_bounding_box(display, 0, 0, 160, 120, buffer);
+				sw1_flag = false;
+				sw2_flag = false;
 			}
-			sw2_flag = false;
 
-			k_msleep(1);
+
+			k_msleep(sleep_timeouts[sleep_timeout_idx]);
 		}
 	}
 
