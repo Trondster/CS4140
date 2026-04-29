@@ -29,6 +29,27 @@ public:
    PreprocDiffScaling(uint8_t* input_buf, uint8_t* second_buf, uint8_t* grayscale_buf, uint8_t* second_grayscale_buf,
                int height, int width, int bpp) :
       IPreprocHandler(input_buf, second_buf, grayscale_buf, second_grayscale_buf, height, width, bpp) {}
+
+
+   void prepare_data() {
+      uint8_t* current_grayscale_buf = input_buf_is_current ? grayscale_buf : second_grayscale_buf;
+      uint8_t* previous_grayscale_buf = input_buf_is_current ? second_grayscale_buf : grayscale_buf;
+
+      //Downscale the grayscale difference image to create the downscaled versions that we will display.
+      downscale_grayscale_image_to_small_unpadded_image(current_grayscale_buf, current_grayscale_downscaled_2x2_nopad, width, height, 2);
+      downscale_grayscale_image_to_small_unpadded_image(current_grayscale_buf, current_grayscale_downscaled_3x3_nopad, width, height, 3);
+      downscale_grayscale_image_to_small_unpadded_image(current_grayscale_buf, current_grayscale_downscaled_4x4_nopad, width, height, 4);
+
+      //Downscale the grayscale difference image to create the downscaled versions that we will display.
+      downscale_grayscale_image_to_small_unpadded_image(previous_grayscale_buf, current_diff_downscaled_2x2_nopad, width, height, 2);
+      downscale_grayscale_image_to_small_unpadded_image(previous_grayscale_buf, current_diff_downscaled_3x3_nopad, width, height, 3);
+      downscale_grayscale_image_to_small_unpadded_image(previous_grayscale_buf, current_diff_downscaled_4x4_nopad, width, height, 4);
+
+      //Strip the padding from the current grayscale buffer and previous grayscale buffer, so that we can apply the gate value and display the difference image without the padding.
+      strip_grayscale_padding(current_grayscale_buf, current_grayscale_nopad, width, height);
+      strip_grayscale_padding(previous_grayscale_buf, current_diff_nopad, width, height);
+   }
+
    void process() override {
       //Toggle which buffer is current for the current frame.
       input_buf_is_current = !input_buf_is_current; 
@@ -48,19 +69,6 @@ public:
       //Using the alternate difference calculation.
       overwrite_previous_grayscale_with_diff_minus(current_grayscale_buf, previous_grayscale_buf, width, height, gate_value);
 
-      //Downscale the grayscale difference image to create the downscaled versions that we will display.
-      downscale_grayscale_image_to_small_unpadded_image(current_grayscale_buf, current_grayscale_downscaled_2x2_nopad, width, height, 2);
-      downscale_grayscale_image_to_small_unpadded_image(current_grayscale_buf, current_grayscale_downscaled_3x3_nopad, width, height, 3);
-      downscale_grayscale_image_to_small_unpadded_image(current_grayscale_buf, current_grayscale_downscaled_4x4_nopad, width, height, 4);
-
-      //Downscale the grayscale difference image to create the downscaled versions that we will display.
-      downscale_grayscale_image_to_small_unpadded_image(previous_grayscale_buf, current_diff_downscaled_2x2_nopad, width, height, 2);
-      downscale_grayscale_image_to_small_unpadded_image(previous_grayscale_buf, current_diff_downscaled_3x3_nopad, width, height, 3);
-      downscale_grayscale_image_to_small_unpadded_image(previous_grayscale_buf, current_diff_downscaled_4x4_nopad, width, height, 4);
-
-      //Strip the padding from the current grayscale buffer and previous grayscale buffer, so that we can apply the gate value and display the difference image without the padding.
-      strip_grayscale_padding(current_grayscale_buf, current_grayscale_nopad, width, height);
-      strip_grayscale_padding(previous_grayscale_buf, current_diff_nopad, width, height);
 
       //Print the original color image to the display.
       //tft_draw_image(display, 0, 0, width, height, current_frame_buf);
@@ -80,6 +88,14 @@ public:
 
    uint8_t* get_current_diff_grayscale_nopad() {
       return current_diff_nopad;
+   }
+
+   uint8_t* get_current_grayscale_padded() {
+      return input_buf_is_current ? grayscale_buf : second_grayscale_buf;
+   }
+
+   uint8_t* get_current_diff_grayscale_padded() {
+      return input_buf_is_current ? second_grayscale_buf : grayscale_buf;
    }
 
    uint8_t* get_current_grayscale_downscaled_2x2_nopad() {
