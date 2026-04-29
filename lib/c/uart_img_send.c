@@ -71,6 +71,7 @@ bool uart_img_send(const struct device *uart, const uint8_t *pixels,
 	};
 
 	for (uint8_t attempt = 0; attempt < max_tries; attempt++) {
+		k_msleep(10 * attempt);
 		uart_write(uart, FRAME_SOF, sizeof(FRAME_SOF));
 		uart_write(uart, hdr, sizeof(hdr));
 		if (meta_len > 0) {
@@ -82,7 +83,6 @@ bool uart_img_send(const struct device *uart, const uint8_t *pixels,
 		if (wait_for_ack(uart)) {
 			return true;
 		}
-		k_msleep(10 * (attempt + 1));
 	}
 	return false;
 }
