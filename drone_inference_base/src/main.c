@@ -9,7 +9,19 @@
 
 #define DEBOUNCE_MS       80
 
+#ifdef CONFIG_SCALING_1x1
+#define PIC_SCALING 1
+#endif
+#ifdef CONFIG_SCALING_2x2
 #define PIC_SCALING 2
+#endif
+#ifdef CONFIG_SCALING_3x3
+#define PIC_SCALING 3
+#endif
+#ifdef CONFIG_SCALING_4x4
+#define PIC_SCALING 4
+#endif
+
 #define SCALED_W (IMG_W / PIC_SCALING)
 #define SCALED_H (IMG_H / PIC_SCALING)
 
