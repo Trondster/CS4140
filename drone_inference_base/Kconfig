@@ -1,0 +1,25 @@
+mainmenu "My Application"
+source "Kconfig.zephyr"
+
+menu "Application Options"
+config SCALING_1x1
+    bool "Enable 1x1 scaling"
+    default n
+    help
+      Enables the 1x1 scaling functionality.
+config SCALING_2x2
+    bool "Enable 2x2 scaling"
+    default n
+    help
+      Enables the 2x2 scaling functionality.
+config SCALING_3x3
+    bool "Enable 3x3 scaling"
+    default n
+    help
+      Enables the 4x4 scaling functionality.
+config SCALING_4x4
+    bool "Enable 4x4 scaling"
+    default n
+    help
+      Enables the 4x4 scaling functionality.
+endmenu

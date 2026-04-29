@@ -7,9 +7,6 @@
 
 #include "../../c/pixel_conversion.h"
 
-#define PER_COLOR_DIFF_GATE_VALUE 1
-#define GRAYSCALE_DIFF_GATE_VALUE 3
-
 
 void calculate_grayscale_image(const uint8_t* input_buf, uint8_t* padded_grayscale_buf,
    const int width, const int height, const int bpp) {

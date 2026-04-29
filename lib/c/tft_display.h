@@ -100,6 +100,10 @@ void tft_draw_image(const struct device *dev, int x, int y, int w, int h,
 void tft_draw_grayscale_image(const struct device *dev, int x, int y, int w, int h,
 			      const uint8_t *grayscale, bool padded_grayscale);
 
+
+void tft_draw_scaled_grayscale_image(const struct device *dev, int x, int y, int w, int h,
+			      const uint8_t *grayscale, int scale);
+
 /* ── Computer-vision overlays ───────────────────────────────────────────── */
 
 /**
