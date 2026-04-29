@@ -175,6 +175,9 @@ public partial class MainWindow : Window
         _clearPairs = ScanCategory(Path.Combine(root, "grey", "clear"), "clear", labelsDir);
         _dronePairs = ScanCategory(Path.Combine(root, "grey", "drone"), "drone", labelsDir);
 
+        foreach (var pair in _clearPairs.Concat(_dronePairs))
+            pair.HasMissingFiles = HasMissingExtraFiles(root, pair.Category, pair.Id);
+
         RefreshLists(restoreId);
         if (_selectedPair == null) ClearDisplay();
     }
@@ -225,6 +228,24 @@ public partial class MainWindow : Window
             .OrderBy(p => int.TryParse(p.Id, out int n) ? n : int.MaxValue)
             .ThenBy(p => p.Id)
             .ToList();
+    }
+
+    private static bool HasMissingExtraFiles(string root, string category, string id)
+    {
+        (string folder, string secondSuffix)[] extras =
+        [
+            ("color", "previous_frame"),
+            ("2x2",   "diff_frame"),
+            ("3x3",   "diff_frame"),
+            ("4x4",   "diff_frame"),
+        ];
+        foreach (var (folder, secondSuffix) in extras)
+        {
+            if (!File.Exists(Path.Combine(root, folder, category, $"{id}_{category}_current_frame.png")) ||
+                !File.Exists(Path.Combine(root, folder, category, $"{id}_{category}_{secondSuffix}.png")))
+                return true;
+        }
+        return false;
     }
 
     // ── List population ──────────────────────────────────────────────────────
