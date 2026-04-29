@@ -295,8 +295,8 @@ int main()
 				const char* drone_or_clear = drone ? "drone" : "clear";
 
 				struct data_to_send data[] = {
-					{current_frame_buf, frame_width, frame_height, 2, "color", current_frame_filename},
-					{previous_frame_buf, frame_width, frame_height, 2, "color", previous_frame_filename},
+					//{current_frame_buf, frame_width, frame_height, 2, "color", current_frame_filename},
+					//{previous_frame_buf, frame_width, frame_height, 2, "color", previous_frame_filename},
 					{unpadded_grayscale_buf, frame_width, frame_height, 1, "grey", current_frame_filename},
 					{diff_grayscale_buf, frame_width, frame_height, 1, "grey", diff_frame_filename},
 					{downscaled_2x2_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, "2x2", current_frame_filename},

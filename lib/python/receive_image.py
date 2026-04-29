@@ -63,6 +63,8 @@ FRAME_SOF = bytes([0xDE, 0xAD, 0xBE, 0xEF])
 FRAME_EOF = bytes([0xCA, 0xFE, 0xBA, 0xBE])
 ACK = bytes([0x06])
 NAK = bytes([0x15])
+PACKET_SIZE = 512  # Must match UART_IMG_PACKET_SIZE in uart_img_send.h
+MAX_CONSECUTIVE_ERRORS = 10
 
 _FMT_NAMES = {1: "greyscale", 2: "RGB565", 3: "RGB888"}
 
@@ -131,6 +133,35 @@ def find_marker(ser: "serial.Serial", marker: bytes) -> None:
             window.append(b[0])
 
 
+def receive_packet(ser: "serial.Serial") -> tuple:
+    """Read one packet, validate XOR checksum, and return (seq, payload).
+
+    Raises IOError on timeout and ValueError on checksum mismatch.
+    Packet format: [seq_lo seq_hi len_lo len_hi] [payload...] [xor_checksum]
+    """
+    hdr = ser.read(4)
+    if len(hdr) < 4:
+        raise IOError("Timeout reading packet header")
+    seq = struct.unpack_from("<H", hdr, 0)[0]
+    length = struct.unpack_from("<H", hdr, 2)[0]
+    payload = ser.read(length)
+    if len(payload) < length:
+        raise IOError(f"Truncated payload ({len(payload)}/{length} bytes)")
+    chk_byte = ser.read(1)
+    if not chk_byte:
+        raise IOError("Timeout reading checksum")
+    expected = 0
+    for b in hdr:
+        expected ^= b
+    for b in payload:
+        expected ^= b
+    if chk_byte[0] != expected:
+        raise ValueError(
+            f"Checksum mismatch (got 0x{chk_byte[0]:02x}, expected 0x{expected:02x})"
+        )
+    return seq, bytes(payload)
+
+
 def receive_frames(port: str, default_folder: str, default_filename: str) -> None:
     print(f"Opening {port} at {BAUD_RATE} baud ...")
     with serial.Serial(port, BAUD_RATE, timeout=2) as ser:
@@ -140,34 +171,39 @@ def receive_frames(port: str, default_folder: str, default_filename: str) -> Non
         while True:
             find_marker(ser, FRAME_SOF)
 
-            hdr = ser.read(8)
-            if len(hdr) < 8:
-                error_line("Timeout reading header, retrying ...")
-                ser.write(NAK)
+            # --- Packet 0: image header + metadata ---
+            # Retry in case of corruption; sender retransmits on NAK.
+            header_ok = False
+            for _ in range(MAX_CONSECUTIVE_ERRORS):
+                try:
+                    seq, hdr_payload = receive_packet(ser)
+                    if seq != 0:
+                        error_line(f"Expected header packet seq=0, got {seq} — sent NAK")
+                        ser.write(NAK)
+                        continue
+                    if len(hdr_payload) < 8:
+                        error_line("Header packet payload too short — sent NAK")
+                        ser.write(NAK)
+                        continue
+                    ser.write(ACK)
+                    header_ok = True
+                    break
+                except (IOError, ValueError) as exc:
+                    error_line(f"Header packet error: {exc} — sent NAK")
+                    ser.write(NAK)
+
+            if not header_ok:
+                error_line("Could not receive header packet, re-syncing ...")
                 continue
 
-            width, height = struct.unpack_from("<HH", hdr, 0)
-            bpp        = hdr[4]
-            big_endian = bool(hdr[5])
-            meta_len   = struct.unpack_from("<H", hdr, 6)[0]
-            size       = width * height * bpp
-
-            metadata = ""
+            width, height = struct.unpack_from("<HH", hdr_payload, 0)
+            bpp        = hdr_payload[4]
+            big_endian = bool(hdr_payload[5])
+            meta_len   = struct.unpack_from("<H", hdr_payload, 6)[0]
+            metadata   = ""
             if meta_len > 0:
-                raw = ser.read(meta_len)
-                if len(raw) < meta_len:
-                    error_line("Timeout reading metadata, retrying ...")
-                    ser.write(NAK)
-                    continue
-                metadata = raw.decode("utf-8", errors="replace")
+                metadata = hdr_payload[8:8 + meta_len].decode("utf-8", errors="replace")
 
-            fmt_name = _FMT_NAMES.get(bpp, f"{bpp}bpp")
-            #print(f"Frame incoming: {width}×{height}, {fmt_name}, "
-                  #f"{'big' if big_endian else 'little'}-endian, {size} bytes")
-            #if metadata:
-                #print(f"  Metadata: {metadata}")
-
-            # Resolve label, filename — metadata folder/label are subfolders within default_folder
             meta_folder = extract_meta_field(metadata, "folder")
             label       = extract_meta_field(metadata, "label")
             filename    = extract_meta_field(metadata, "filename") or default_filename
@@ -178,21 +214,53 @@ def receive_frames(port: str, default_folder: str, default_filename: str) -> Non
                 print()
                 previous_file_prefix = filename_prefix
 
-            data = ser.read(size)
-            if len(data) < size:
-                error_line(f"  Truncated ({len(data)}/{size} bytes) — sent NACK {filename}")
-                ser.write(NAK)
+            # --- Packets 1..N: pixel data ---
+            total_bytes = width * height * bpp
+            data = bytearray()
+            expected_seq = 1
+            frame_ok = True
+            consecutive_errors = 0
+
+            while len(data) < total_bytes:
+                try:
+                    seq, payload = receive_packet(ser)
+                    consecutive_errors = 0
+                    if seq == expected_seq:
+                        data.extend(payload)
+                        ser.write(ACK)
+                        expected_seq += 1
+                    elif seq == expected_seq - 1:
+                        # Duplicate: our previous ACK was lost; re-ACK without appending.
+                        ser.write(ACK)
+                    else:
+                        error_line(
+                            f"Sequence error: expected {expected_seq}, got {seq} — sent NAK"
+                        )
+                        ser.write(NAK)
+                        frame_ok = False
+                        break
+                except (IOError, ValueError) as exc:
+                    error_line(f"Packet error (seq {expected_seq}): {exc} — sent NAK")
+                    ser.write(NAK)
+                    consecutive_errors += 1
+                    if consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
+                        error_line("Too many consecutive errors, re-syncing ...")
+                        frame_ok = False
+                        break
+
+            if not frame_ok:
                 continue
 
+            # --- EOF marker + final ACK ---
             eof = ser.read(len(FRAME_EOF))
             if eof != FRAME_EOF:
-                error_line(f"  Bad end marker: {eof.hex()} — sent NACK {filename}")
+                error_line(f"Bad EOF marker: {eof.hex()} — sent NAK")
                 ser.write(NAK)
                 continue
 
             ser.write(ACK)
 
-            # Build output directory: default_folder / [meta_folder/] [label/]
+            # --- Save image ---
             subparts = [p for p in [meta_folder, label] if p]
             outdir = os.path.join(default_folder, *subparts)
             os.makedirs(outdir, exist_ok=True)
@@ -206,7 +274,7 @@ def receive_frames(port: str, default_folder: str, default_filename: str) -> Non
                 print(f"  Skipping save: file already exists: {filepath}")
                 continue
 
-            img = pixels_to_image(data, width, height, big_endian, bpp)
+            img = pixels_to_image(bytes(data), width, height, big_endian, bpp)
 
             png_meta = PngImagePlugin.PngInfo()
             if metadata:
