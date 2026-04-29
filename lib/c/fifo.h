@@ -42,6 +42,10 @@ int fifo_init(void);
  */
 int fifo_capture(uint8_t *buf, size_t size, size_t line_stride);
 
+int fifo_grayscale_capture(uint8_t *buf, size_t full_width, size_t full_height, size_t scale, uint16_t *aggregate_cache);
+
+int fifo_grayscale_capture_565(uint8_t *buf, size_t pixel_width, size_t pixel_height, size_t scale, uint16_t *aggregate_cache);
+
 #ifdef __cplusplus
 }
 #endif

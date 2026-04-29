@@ -58,3 +58,14 @@ uint16_t calculate_rgb565(const uint8_t gray) {
     return pixel;
 }
 
+void overwrite_unpadded_previous_grayscale_with_diff_minus(const uint8_t* current_unpadded_grayscale_buf,
+   uint8_t* previous_unpadded_grayscale_buf,
+   const int width, const int height, const int gate_value) {
+   const int gate_low = 128 - gate_value;
+   const int gate_high = 128 + gate_value;
+   const int max = width * height;
+   for (int idx = 0; idx < max; ++idx) {
+      int diff = (255 - previous_unpadded_grayscale_buf[idx] + current_unpadded_grayscale_buf[idx]) / 2;
+      previous_unpadded_grayscale_buf[idx] = (diff > gate_high || diff < gate_low) ? (uint8_t)diff : (uint8_t)128;
+   }
+}

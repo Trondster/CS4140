@@ -267,6 +267,35 @@ void tft_draw_grayscale_image(const struct device *dev, int x, int y, int w, int
 	}
 }
 
+void tft_draw_scaled_grayscale_image(const struct device *dev, int x, int y, int w, int h,
+			      const uint8_t *grayscale, int scale)
+{
+	struct display_buffer_descriptor d = {
+		.buf_size = (uint32_t)(w * TFT_BPP * scale),
+		.width    = (uint16_t)(w * scale),
+		.height   = 1,
+		.pitch    = (uint16_t)(w * scale),
+	};
+	for (int row = 0; row < h; row++) {
+		for (int col = 0; col < w; ++col)
+		{
+			int grayidx = row * w + col;
+			uint16_t rgb565_pixel = calculate_rgb565(grayscale[grayidx]);
+			for (int scaleCtr = 0; scaleCtr < scale; ++scaleCtr) {
+				int pix1idx = (col * scale) * 2 + scaleCtr * 2;
+				int pix2idx = (col * scale) * 2 + scaleCtr * 2 + 1;
+				grayscale_row_buf[pix1idx]     = (rgb565_pixel >> 8) & 0xFF;
+				grayscale_row_buf[pix2idx] = rgb565_pixel & 0xFF;
+			}
+		}
+
+		for (int ctr = 0; ctr < scale; ++ctr) {
+			display_write(dev, x, y + (row * scale) + ctr, &d, grayscale_row_buf);
+		}
+	}
+}
+
+
 /* ── Computer-vision overlays ───────────────────────────────────────────── */
 
 void tft_draw_bounding_box(const struct device *dev, int x, int y, int w,

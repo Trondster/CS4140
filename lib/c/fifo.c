@@ -25,6 +25,7 @@
  */
 
 #include "fifo.h"
+#include "pixel_conversion.h"
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -184,4 +185,80 @@ int fifo_capture(uint8_t *buf, size_t size, size_t line_stride)
 	}
 
 	return 0;
+}
+
+int fifo_grayscale_capture_565(uint8_t *buf, size_t pixel_width, size_t pixel_height, size_t scale, uint16_t *aggregate_cache) {
+
+	/* 1.  Wait for VSYNC = 1  (vertical blanking / end of old frame) */
+	while (gpio_pin_get_raw(gpio2, PIN_VSYNC) == 0) {
+	}
+	/* 2.  Wait for VSYNC = 0  (start of new frame) */
+	while (gpio_pin_get_raw(gpio2, PIN_VSYNC) != 0) {
+	}
+
+	/* 3.  Reset write pointer and enable writing (AL422B /WE active-low) */
+	write_reset();
+	gpio_pin_set_raw(gpio0, PIN_WEN, 0);
+
+	/* 4.  Wait for the full frame to be written (VSYNC = 1 again) */
+	while (gpio_pin_get_raw(gpio2, PIN_VSYNC) == 0) {
+	}
+
+	/* 5.  Stop writing */
+	gpio_pin_set_raw(gpio0, PIN_WEN, 1);
+
+	/* 6.  Reset read pointer */
+	read_reset();
+
+	gpio_pin_set_raw(gpio2, PIN_RCK, 0);
+	const int trouble_pixel = pixel_width - 1;
+
+	const size_t num_rows = pixel_height / scale;
+	//const size_t num_used_pixel_rows = num_rows * scale;
+	const size_t num_cols = pixel_width / scale;
+	const size_t num_used_pixel_cols = num_cols * scale;
+	const size_t num_aggregates = scale * scale;
+
+	//For each row in the read grayscale image
+	for (size_t row = 0; row < num_rows; ++row) {
+		//Clearing the aggregate cache
+		for (size_t i = 0; i < num_cols; ++i) {
+			aggregate_cache[i] = 0;
+		}
+
+		//Reading the rows to be aggregated
+		for (size_t scale_row = 0; scale_row < scale; ++scale_row) {
+			for (size_t pixel_col = 0; pixel_col < pixel_width; ++pixel_col) {
+				gpio_pin_set_raw(gpio2, PIN_RCK, 1);
+				uint8_t byte1 = read_byte();
+				uint8_t byte2;
+				gpio_pin_set_raw(gpio2, PIN_RCK, 0);
+				if (byte1 != 0 && pixel_col == trouble_pixel) {
+					//Treating the previous byte as read as 0
+					byte2 = byte1;
+					byte1 = 0;
+				}
+				else {
+					gpio_pin_set_raw(gpio2, PIN_RCK, 1);
+					byte2 = read_byte();
+					gpio_pin_set_raw(gpio2, PIN_RCK, 0);
+				}
+				if (pixel_col >= num_used_pixel_cols) {
+					//Failsafe, in case we are over the limit - for example (160 / 3) * 3 = 53*3 = 159.
+					continue;
+				}
+
+				uint8_t gray_pixel = calculate_grayscale(byte1, byte2);
+				aggregate_cache[pixel_col / scale] += gray_pixel;
+			}
+		}
+
+		//Aggregating the pixels in the row:
+		for (size_t col = 0; col < num_cols; ++col) {
+			buf[row * num_cols + col] = aggregate_cache[col] / num_aggregates;
+		}
+	}
+
+	return 0;
+
 }
