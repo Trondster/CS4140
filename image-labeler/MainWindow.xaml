@@ -1,0 +1,157 @@
+<Window x:Class="ImageLabeler.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Image Labeler" Width="1120" Height="760" MinWidth="920" MinHeight="580"
+        Closing="Window_Closing"
+        PreviewKeyDown="Window_PreviewKeyDown">
+
+    <DockPanel LastChildFill="True">
+
+        <!-- ── Toolbar ─────────────────────────────────────────────────── -->
+        <Border DockPanel.Dock="Top"
+                BorderBrush="#CCCCCC" BorderThickness="0,0,0,1"
+                Padding="8,6">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Dataset folder:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <TextBox x:Name="FolderPathBox" Width="380" VerticalAlignment="Center"
+                         Padding="4,3" Margin="0,0,6,0"/>
+                <Button Content="Browse…"          Click="Browse_Click"         Padding="8,3" Margin="0,0,6,0"/>
+                <Button Content="Rescan"            Click="Rescan_Click"         Padding="8,3" Margin="0,0,6,0"/>
+                <Button Content="Label Clear Files" Click="LabelClearFiles_Click" Padding="8,3"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Three-column layout ───────────────────────────────────────── -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="160" MinWidth="80"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="160" MinWidth="80"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Clear list (left) -->
+            <DockPanel Grid.Column="0" Margin="6">
+                <TextBlock DockPanel.Dock="Top" Text="Clear" FontWeight="Bold" Margin="0,0,0,3"/>
+                <TextBlock DockPanel.Dock="Top" x:Name="ClearCounter"
+                           FontSize="11" Foreground="#555555" Margin="0,0,0,3"/>
+                <CheckBox  DockPanel.Dock="Top" x:Name="HideClearLabeled" Content="Hide labeled"
+                           FontSize="11" Margin="0,0,0,4"
+                           Checked="HideLabeled_Changed" Unchecked="HideLabeled_Changed"/>
+                <ListBox x:Name="ClearList"
+                         SelectionChanged="ClearList_SelectionChanged"
+                         FontFamily="Consolas" FontSize="12"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+            </DockPanel>
+
+            <!-- Centre: images + label data -->
+            <ScrollViewer Grid.Column="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Auto">
+                <StackPanel Margin="6" HorizontalAlignment="Center">
+
+                    <!-- Images -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+
+                        <StackPanel Margin="0,0,8,0">
+                            <TextBlock Text="Current Frame" HorizontalAlignment="Center"
+                                       FontWeight="SemiBold" Margin="0,0,0,3"/>
+                            <Canvas x:Name="Canvas1" Width="320" Height="240"
+                                    Background="#222222" ClipToBounds="True" Cursor="None"
+                                    Focusable="True"
+                                    MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
+                                    MouseMove="Canvas_MouseMove"
+                                    MouseLeftButtonUp="Canvas_MouseLeftButtonUp"
+                                    MouseEnter="Canvas_MouseEnter"
+                                    MouseLeave="Canvas_MouseLeave"
+                                    KeyDown="Canvas_KeyDown">
+                                <Image x:Name="CurrentImage1" Width="320" Height="240" Stretch="Fill"/>
+                                <Rectangle x:Name="BoundingRect1"
+                                           Stroke="#00FF00" StrokeThickness="2"
+                                           Fill="#3300FF00" Visibility="Hidden"/>
+                                <Line x:Name="CrossH1" Stroke="Red" StrokeThickness="1"
+                                      X1="0" X2="320" IsHitTestVisible="False" Visibility="Hidden"/>
+                                <Line x:Name="CrossV1" Stroke="Red" StrokeThickness="1"
+                                      Y1="0" Y2="240" IsHitTestVisible="False" Visibility="Hidden"/>
+                            </Canvas>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Text="Diff Frame" HorizontalAlignment="Center"
+                                       FontWeight="SemiBold" Margin="0,0,0,3"/>
+                            <Canvas x:Name="Canvas2" Width="320" Height="240"
+                                    Background="#222222" ClipToBounds="True" Cursor="None"
+                                    Focusable="True"
+                                    MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
+                                    MouseMove="Canvas_MouseMove"
+                                    MouseLeftButtonUp="Canvas_MouseLeftButtonUp"
+                                    MouseEnter="Canvas_MouseEnter"
+                                    MouseLeave="Canvas_MouseLeave"
+                                    KeyDown="Canvas_KeyDown">
+                                <Image x:Name="CurrentImage2" Width="320" Height="240" Stretch="Fill"/>
+                                <Rectangle x:Name="BoundingRect2"
+                                           Stroke="#00FF00" StrokeThickness="2"
+                                           Fill="#3300FF00" Visibility="Hidden"/>
+                                <Line x:Name="CrossH2" Stroke="Red" StrokeThickness="1"
+                                      X1="0" X2="320" IsHitTestVisible="False" Visibility="Hidden"/>
+                                <Line x:Name="CrossV2" Stroke="Red" StrokeThickness="1"
+                                      Y1="0" Y2="240" IsHitTestVisible="False" Visibility="Hidden"/>
+                            </Canvas>
+                        </StackPanel>
+
+                    </StackPanel>
+
+                    <!-- File paths -->
+                    <TextBlock x:Name="Path1Label" Text="Current frame: (none)"
+                               Margin="0,8,0,2" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="Path2Label" Text="Diff frame:    (none)"
+                               Margin="0,0,0,10" TextTrimming="CharacterEllipsis"/>
+
+                    <!-- Drone checkbox -->
+                    <CheckBox x:Name="IsDroneCheckbox" Content="Drone"
+                              Margin="0,0,0,8"
+                              Checked="IsDroneCheckbox_Changed"
+                              Unchecked="IsDroneCheckbox_Changed"/>
+
+                    <!-- Bounding-box coordinate fields -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <TextBlock Text="X:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBox x:Name="XBox" Width="90" Padding="3,2" Margin="0,0,12,0"
+                                 TextChanged="BBoxField_TextChanged"/>
+                        <TextBlock Text="Y:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBox x:Name="YBox" Width="90" Padding="3,2" Margin="0,0,12,0"
+                                 TextChanged="BBoxField_TextChanged"/>
+                        <TextBlock Text="W:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBox x:Name="WBox" Width="90" Padding="3,2" Margin="0,0,12,0"
+                                 TextChanged="BBoxField_TextChanged"/>
+                        <TextBlock Text="H:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBox x:Name="HBox" Width="90" Padding="3,2"
+                                 TextChanged="BBoxField_TextChanged"/>
+                    </StackPanel>
+
+                    <!-- Save / Save and Advance / Cancel -->
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Save"             Click="Save_Click"          Width="80" Padding="5,4" Margin="0,0,8,0"/>
+                        <Button Content="Save and Advance" Click="SaveAndAdvance_Click"           Padding="5,4" Margin="0,0,8,0"/>
+                        <Button Content="Cancel"           Click="Cancel_Click"         Width="80" Padding="5,4"/>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Drone list (right) -->
+            <DockPanel Grid.Column="2" Margin="6">
+                <TextBlock DockPanel.Dock="Top" Text="Drone" FontWeight="Bold" Margin="0,0,0,3"/>
+                <TextBlock DockPanel.Dock="Top" x:Name="DroneCounter"
+                           FontSize="11" Foreground="#555555" Margin="0,0,0,3"/>
+                <CheckBox  DockPanel.Dock="Top" x:Name="HideDroneLabeled" Content="Hide labeled"
+                           FontSize="11" Margin="0,0,0,4"
+                           Checked="HideLabeled_Changed" Unchecked="HideLabeled_Changed"/>
+                <ListBox x:Name="DroneList"
+                         SelectionChanged="DroneList_SelectionChanged"
+                         FontFamily="Consolas" FontSize="12"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+            </DockPanel>
+
+        </Grid>
+    </DockPanel>
+</Window>
