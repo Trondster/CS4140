@@ -85,3 +85,15 @@ Make the arrow keys also go up and down without saving
 
 Prompt 10:
 
+Above the two greyscale images currently showing the image pairs and for adding bounding box, there should be an option for selecting to view the equivalent pairs of color, 2x2, 3x3, and 4x4 with the bounding boxes in the equivalent positions. There should be a dropdown, and remember to have an option of not showing anything extra. The images should be scaled to the same size as the currently shown greyscales, and should also be position in the similar way, with the current picture to the left and diff or previous image to the right
+
+Prompt 11:
+
+Got an error: 
+Unhandled exception. System.Reflection.TargetInvocationException: Exception has been thrown by the target of an invocation.
+ ---> System.NullReferenceException: Object reference not set to an instance of an object.
+   at ImageLabeler.MainWindow.ExtraViewCombo_SelectionChanged(Object sender, SelectionChangedEventArgs e) in c:\Users\nicol\CS4140\image-labeler\MainWindow.xaml.cs:line 135
+
+Prompt 12:
+
+The color frames is wrong, its for example: 75030_clear_previous_frame.png, 75030_clear_previous_frame.png

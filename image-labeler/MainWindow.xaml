@@ -49,7 +49,48 @@
                           HorizontalScrollBarVisibility="Auto">
                 <StackPanel Margin="6" HorizontalAlignment="Center">
 
-                    <!-- Images -->
+                    <!-- Extra view selector -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
+                        <TextBlock Text="Extra view:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="ExtraViewCombo" Width="100"
+                                  SelectionChanged="ExtraViewCombo_SelectionChanged">
+                            <ComboBoxItem Content="(none)" Tag=""      IsSelected="True"/>
+                            <ComboBoxItem Content="Color"  Tag="color"/>
+                            <ComboBoxItem Content="2×2"    Tag="2x2"/>
+                            <ComboBoxItem Content="3×3"    Tag="3x3"/>
+                            <ComboBoxItem Content="4×4"    Tag="4x4"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Extra images — collapsed when (none) is selected -->
+                    <StackPanel x:Name="ExtraImagesPanel" Orientation="Horizontal"
+                                HorizontalAlignment="Center" Margin="0,0,0,8"
+                                Visibility="Collapsed">
+                        <StackPanel Margin="0,0,8,0">
+                            <TextBlock x:Name="ExtraCurrentLabel" Text="Current Frame"
+                                       HorizontalAlignment="Center" FontWeight="SemiBold" Margin="0,0,0,3"/>
+                            <Canvas x:Name="ExtraCanvas1" Width="320" Height="240"
+                                    Background="#222222" ClipToBounds="True">
+                                <Image x:Name="ExtraImage1" Width="320" Height="240" Stretch="Fill"/>
+                                <Rectangle x:Name="ExtraBoundingRect1"
+                                           Stroke="#00FF00" StrokeThickness="2"
+                                           Fill="#3300FF00" Visibility="Hidden"/>
+                            </Canvas>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock x:Name="ExtraDiffLabel" Text="Diff Frame"
+                                       HorizontalAlignment="Center" FontWeight="SemiBold" Margin="0,0,0,3"/>
+                            <Canvas x:Name="ExtraCanvas2" Width="320" Height="240"
+                                    Background="#222222" ClipToBounds="True">
+                                <Image x:Name="ExtraImage2" Width="320" Height="240" Stretch="Fill"/>
+                                <Rectangle x:Name="ExtraBoundingRect2"
+                                           Stroke="#00FF00" StrokeThickness="2"
+                                           Fill="#3300FF00" Visibility="Hidden"/>
+                            </Canvas>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Greyscale images -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
 
                         <StackPanel Margin="0,0,8,0">

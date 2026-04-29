@@ -121,6 +121,48 @@ public partial class MainWindow : Window
             "Label Clear Files", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
+    // ── Extra view ───────────────────────────────────────────────────────────
+
+    // Folder name under DatasetRoot, or null when "(none)" is selected.
+    private string? ExtraViewFolder =>
+        (ExtraViewCombo.SelectedItem as ComboBoxItem)?.Tag is string t && t.Length > 0 ? t : null;
+
+    private void ExtraViewCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ExtraCurrentLabel == null) return;   // fired during InitializeComponent, ignore
+
+        string? folder = ExtraViewFolder;
+        string viewName = (ExtraViewCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+
+        ExtraCurrentLabel.Text = $"Current Frame ({viewName})";
+        ExtraDiffLabel.Text    = $"Diff Frame ({viewName})";
+        ExtraImagesPanel.Visibility = folder != null ? Visibility.Visible : Visibility.Collapsed;
+
+        if (_selectedPair != null)
+            LoadExtraImages(_selectedPair);
+
+        // Sync bounding-box visibility to the new panel state
+        bool boxVisible = BoundingRect1.Visibility == Visibility.Visible && folder != null;
+        ExtraBoundingRect1.Visibility =
+        ExtraBoundingRect2.Visibility = boxVisible ? Visibility.Visible : Visibility.Hidden;
+    }
+
+    private void LoadExtraImages(ImagePair pair)
+    {
+        string? folder = ExtraViewFolder;
+        if (folder == null)
+        {
+            ExtraImage1.Source = ExtraImage2.Source = null;
+            return;
+        }
+        string root = DatasetRoot;
+        string cat  = pair.Category;
+        string id   = pair.Id;
+        string secondSuffix = folder == "color" ? "previous_frame" : "diff_frame";
+        ExtraImage1.Source = TryLoadBitmap(Path.Combine(root, folder, cat, $"{id}_{cat}_current_frame.png"));
+        ExtraImage2.Source = TryLoadBitmap(Path.Combine(root, folder, cat, $"{id}_{cat}_{secondSuffix}.png"));
+    }
+
     // ── Dataset scanning ─────────────────────────────────────────────────────
 
     private void ScanDataset()
@@ -269,6 +311,7 @@ public partial class MainWindow : Window
 
         CurrentImage1.Source = TryLoadBitmap(pair.CurrentFramePath);
         CurrentImage2.Source = TryLoadBitmap(pair.DiffFramePath);
+        LoadExtraImages(pair);
 
         _savedLabel = LabelData.TryLoad(pair.LabelPath);
         ApplyLabel(_savedLabel);
@@ -290,6 +333,8 @@ public partial class MainWindow : Window
     {
         CurrentImage1.Source = null;
         CurrentImage2.Source = null;
+        ExtraImage1.Source   = null;
+        ExtraImage2.Source   = null;
         Path1Label.Text = "Current frame: (none)";
         Path2Label.Text = "Diff frame:    (none)";
         ApplyLabel(null);
@@ -330,14 +375,20 @@ public partial class MainWindow : Window
         double top    = (yc - h / 2) * CanvasH;
         double width  = w * CanvasW;
         double height = h * CanvasH;
-        PlaceRect(BoundingRect1, left, top, width, height);
-        PlaceRect(BoundingRect2, left, top, width, height);
+        PlaceRect(BoundingRect1,      left, top, width, height);
+        PlaceRect(BoundingRect2,      left, top, width, height);
+        PlaceRect(ExtraBoundingRect1, left, top, width, height);
+        PlaceRect(ExtraBoundingRect2, left, top, width, height);
         BoundingRect1.Visibility = BoundingRect2.Visibility = Visibility.Visible;
+        bool extraShown = ExtraImagesPanel.Visibility == Visibility.Visible;
+        ExtraBoundingRect1.Visibility =
+        ExtraBoundingRect2.Visibility = extraShown ? Visibility.Visible : Visibility.Hidden;
     }
 
     private void HideBoxes()
     {
-        BoundingRect1.Visibility = BoundingRect2.Visibility = Visibility.Hidden;
+        BoundingRect1.Visibility      = BoundingRect2.Visibility      = Visibility.Hidden;
+        ExtraBoundingRect1.Visibility = ExtraBoundingRect2.Visibility = Visibility.Hidden;
     }
 
     private static void PlaceRect(Rectangle r, double left, double top, double w, double h)
@@ -419,9 +470,14 @@ public partial class MainWindow : Window
         double w = right - left;
         double h = bottom - top;
 
-        PlaceRect(BoundingRect1, left, top, w, h);
-        PlaceRect(BoundingRect2, left, top, w, h);
+        PlaceRect(BoundingRect1,      left, top, w, h);
+        PlaceRect(BoundingRect2,      left, top, w, h);
+        PlaceRect(ExtraBoundingRect1, left, top, w, h);
+        PlaceRect(ExtraBoundingRect2, left, top, w, h);
         BoundingRect1.Visibility = BoundingRect2.Visibility = Visibility.Visible;
+        bool extraShown = ExtraImagesPanel.Visibility == Visibility.Visible;
+        ExtraBoundingRect1.Visibility =
+        ExtraBoundingRect2.Visibility = extraShown ? Visibility.Visible : Visibility.Hidden;
 
         _suppressEvents = true;
         IsDroneCheckbox.IsChecked = true;
