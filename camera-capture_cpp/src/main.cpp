@@ -39,7 +39,7 @@
 
 #define FRAME_RATE 5
 #define FRAME_INTERVAL_MS (1000 / FRAME_RATE)
-#define DEBOUNCE_MS 80
+#define DEBOUNCE_MS 160
 
 #define RETRY_TRANSMISSIONS_ON_FAILURE 10
 
@@ -58,7 +58,9 @@ static uint8_t second_grayscale_buf[BUF_IMG_SIZE] __aligned(4);
 enum class AppState
 {
 	LIVE,
-	FROZEN
+	FROZEN,
+	MOVIE_LIVE,
+	MOVIE_CAPTURE,
 };
 static volatile AppState app_state = AppState::LIVE;
 static volatile bool sw0_flag = false;
@@ -148,6 +150,22 @@ struct data_to_send {
 	const char* filename;
 };
 
+// Used for current_frame_buf, previous_frame_buf, unpadded_grayscale_buf, diff_grayscale_buf
+const int frame_height = IMG_H;
+const int frame_width = IMG_W;
+
+// Used for downscaled_2x2_diff_grayscale_buf and downscaled_2x2_grayscale_buf
+const int downscaled_2x2_height = IMG_H / 2;
+const int downscaled_2x2_width = IMG_W / 2;
+
+// Used for downscaled_3x3_diff_grayscale_buf and downscaled_3x3_grayscale_buf
+const int downscaled_3x3_height = IMG_H / 3;
+const int downscaled_3x3_width = IMG_W / 3;
+
+// Used for downscaled_4x4_diff_grayscale_buf and downscaled_4x4_grayscale_buf
+const int downscaled_4x4_height = IMG_H / 4;
+const int downscaled_4x4_width = IMG_W / 4;
+
 int main()
 {
 	LOG_INF("*** CPP Camera capture ***");
@@ -192,6 +210,7 @@ int main()
 	bool was_grayscale = true;
 	uint64_t generated_timestamp = 0;
 
+	//For now keeping the sleep timeouts thingy - staying at 100ms.
 	int32_t sleep_timeouts[] = {
 		0,
 		50,
@@ -199,7 +218,9 @@ int main()
 		200,
 		400,
 	};
-	size_t sleep_timeout_idx = 0;
+	size_t sleep_timeout_idx = 2; //100ms
+
+	bool capture_is_drone = false;
 	while (true)
 	{
 		/* sw0: toggle between live view and frozen frame */
@@ -221,14 +242,28 @@ int main()
 				// }
 				// printk("\r\n---FRAME_END---\r\n");
 			}
+			else if (app_state == AppState::FROZEN) {
+				generated_timestamp = 0;
+				app_state = AppState::MOVIE_LIVE;
+				preproc_diff_scaling.process();
+				showing_grayscale = was_grayscale;
+				tft_draw_bounding_box(display, 0, 0, 160, 120, "MOVIE LIVE!");
+				k_msleep(1000);
+				sw0_flag = false;
+				sw1_flag = false;
+				sw1_flag = false;
+			}
 			else
 			{
+				//Going back to live! 
 				generated_timestamp = 0;
 				app_state = AppState::LIVE;
 				LOG_INF("Back to live view using handler %s", preproc_diff_scaling.get_name());
 				preproc_diff_scaling.process();
 				showing_grayscale = was_grayscale;
-				tft_draw_bounding_box(display, 0, 0, 160, 120, showing_grayscale ? "live grayscale" : "live diff");
+				uint8_t* active_grayscale = showing_grayscale ? preproc_diff_scaling.get_current_grayscale_padded() : preproc_diff_scaling.get_current_diff_grayscale_padded();
+				tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, active_grayscale, true);
+				tft_draw_bounding_box(display, 0, 0, 160, 120, "Back to LIVE");
 				k_msleep(200);
 			}
 
@@ -237,10 +272,11 @@ int main()
 
 		if (app_state == AppState::FROZEN)
 		{
+			//We have taken a picture! Should we store it?
 			if (sw1_flag || sw2_flag)
 			{
 				/* sw1/sw2: label and transmit the frozen frame */
-				bool drone = sw1_flag ? true : false;
+				capture_is_drone = sw1_flag ? true : false;
 				sw1_flag = false;
 				sw2_flag = false;
 
@@ -263,24 +299,8 @@ int main()
 				uint8_t *downscaled_3x3_diff_grayscale_buf = preproc_diff_scaling.get_current_diff_downscaled_3x3_nopad();
 				uint8_t *downscaled_4x4_diff_grayscale_buf = preproc_diff_scaling.get_current_diff_downscaled_4x4_nopad();
 
-				// Used for current_frame_buf, previous_frame_buf, unpadded_grayscale_buf, diff_grayscale_buf
-				int frame_height = IMG_H;
-				int frame_width = IMG_W;
-
-				// Used for downscaled_2x2_diff_grayscale_buf and downscaled_2x2_grayscale_buf
-				int downscaled_2x2_height = IMG_H / 2;
-				int downscaled_2x2_width = IMG_W / 2;
-
-				// Used for downscaled_3x3_diff_grayscale_buf and downscaled_3x3_grayscale_buf
-				int downscaled_3x3_height = IMG_H / 3;
-				int downscaled_3x3_width = IMG_W / 3;
-
-				// Used for downscaled_4x4_diff_grayscale_buf and downscaled_4x4_grayscale_buf
-				int downscaled_4x4_height = IMG_H / 4;
-				int downscaled_4x4_width = IMG_W / 4;
-
 				tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_padded(), true);
-				tft_draw_bounding_box(display, 0, 0, 160, 120, drone ? "sending drone" : "sending clear");
+				tft_draw_bounding_box(display, 0, 0, 160, 120, capture_is_drone ? "sending drone" : "sending clear");
 
 
 				char prefix[30];
@@ -288,11 +308,11 @@ int main()
 				char previous_frame_filename[64];
 				char diff_frame_filename[64];
 
-				snprintf(prefix, sizeof(prefix), "%llu_%s_", generated_timestamp, drone ? "drone" : "clear");
+				const char* drone_or_clear = capture_is_drone ? "drone" : "clear";
+				snprintf(prefix, sizeof(prefix), "%llu_%s_", generated_timestamp, drone_or_clear);
 				snprintf(current_frame_filename, sizeof(current_frame_filename), "%scurrent_frame.png", prefix);
 				snprintf(previous_frame_filename, sizeof(previous_frame_filename), "%sprevious_frame.png", prefix);
 				snprintf(diff_frame_filename, sizeof(diff_frame_filename), "%sdiff_frame.png", prefix);
-				const char* drone_or_clear = drone ? "drone" : "clear";
 
 				struct data_to_send data[] = {
 					//{current_frame_buf, frame_width, frame_height, 2, "color", current_frame_filename},
@@ -360,8 +380,9 @@ int main()
 
 			k_msleep(10);
 		}
-		else
+		else if (app_state == AppState::LIVE)
 		{
+			//Just showing the live camera
 			k_msleep(1);
 			bool sw1_pressed = sw1_flag;
 			if (sw1_pressed)
@@ -391,10 +412,149 @@ int main()
 				tft_draw_bounding_box(display, 0, 0, 160, 120, buffer);
 				sw1_flag = false;
 				sw2_flag = false;
+			} else {
+				//Regular live
+				tft_draw_bounding_box(display, 0, 0, 160, 120, "LIVE");
 			}
 
 
 			k_msleep(sleep_timeouts[sleep_timeout_idx]);
+		}
+		else if (app_state == AppState::MOVIE_LIVE) {
+			//Preparing to start movie capture!
+			if (sw1_flag || sw2_flag)
+			{
+				/* sw1/sw2: label and transmit the frozen frame */
+				capture_is_drone = sw1_flag ? true : false;
+				sw1_flag = false;
+				sw2_flag = false;
+
+				app_state = AppState::MOVIE_CAPTURE;
+				preproc_diff_scaling.process();
+				k_msleep(sleep_timeouts[sleep_timeout_idx]);
+				preproc_diff_scaling.process();
+				uint8_t* active_grayscale = showing_grayscale ? preproc_diff_scaling.get_current_grayscale_padded() : preproc_diff_scaling.get_current_diff_grayscale_padded();
+
+				tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, active_grayscale, true);
+				tft_draw_bounding_box(display, 0, 0, 160, 120, capture_is_drone ? "DRONE CAPTURE.." : "CLEAR CAPTURE..");
+				k_msleep(1000);
+			}
+			else if (sw0_flag)
+			{
+				//Failsafe panic
+				uint8_t* active_grayscale = showing_grayscale ? preproc_diff_scaling.get_current_grayscale_padded() : preproc_diff_scaling.get_current_diff_grayscale_padded();
+
+				tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, active_grayscale, true);
+				tft_draw_bounding_box(display, 0, 0, 160, 120, "ENDING CAPTURE...");
+				k_msleep(1000);
+				sw0_flag = false;
+				sw1_flag = false;
+				sw2_flag = false;
+				app_state = AppState::LIVE;
+			}
+			else {
+				//Chilling - preparing for someone to start movie capture
+				preproc_diff_scaling.process();
+				showing_grayscale = was_grayscale;
+				uint8_t* active_grayscale = showing_grayscale ? preproc_diff_scaling.get_current_grayscale_padded() : preproc_diff_scaling.get_current_diff_grayscale_padded();
+				tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, active_grayscale, true);
+				tft_draw_bounding_box(display, 0, 0, 160, 120, "MOVIE LIVE!");
+			}
+
+		}
+		else {
+			//Capturing live
+			if (sw0_flag || sw1_flag || sw2_flag) {
+				//Failsafe panic
+				uint8_t* active_grayscale = showing_grayscale ? preproc_diff_scaling.get_current_grayscale_padded() : preproc_diff_scaling.get_current_diff_grayscale_padded();
+
+				tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, active_grayscale, true);
+				tft_draw_bounding_box(display, 0, 0, 160, 120, "ENDING CAPTURE...");
+				k_msleep(1000);
+				sw0_flag = false;
+				sw1_flag = false;
+				sw2_flag = false;
+				app_state = AppState::LIVE;
+			}
+			else {
+				//Capturing!
+				generated_timestamp = k_uptime_get();
+				preproc_diff_scaling.prepare_data();
+
+				// The various buffers to send:
+				// Current frame:
+				// uint8_t *current_frame_buf = preproc_diff_scaling.get_current_frame_buf();
+				// uint8_t *previous_frame_buf = preproc_diff_scaling.get_previous_frame_buf();
+				uint8_t *unpadded_grayscale_buf = preproc_diff_scaling.get_current_grayscale_nopad();
+				uint8_t *diff_grayscale_buf = preproc_diff_scaling.get_current_diff_grayscale_nopad();
+				uint8_t *downscaled_2x2_grayscale_buf = preproc_diff_scaling.get_current_grayscale_downscaled_2x2_nopad();
+				uint8_t *downscaled_3x3_grayscale_buf = preproc_diff_scaling.get_current_grayscale_downscaled_3x3_nopad();
+				uint8_t *downscaled_4x4_grayscale_buf = preproc_diff_scaling.get_current_grayscale_downscaled_4x4_nopad();
+				uint8_t *downscaled_2x2_diff_grayscale_buf = preproc_diff_scaling.get_current_diff_downscaled_2x2_nopad();
+				uint8_t *downscaled_3x3_diff_grayscale_buf = preproc_diff_scaling.get_current_diff_downscaled_3x3_nopad();
+				uint8_t *downscaled_4x4_diff_grayscale_buf = preproc_diff_scaling.get_current_diff_downscaled_4x4_nopad();
+
+
+				tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_padded(), true);
+				tft_draw_bounding_box(display, 0, 0, 160, 120, capture_is_drone ? "sending drone" : "sending clear");
+
+
+				char prefix[30];
+				char current_frame_filename[64];
+				char previous_frame_filename[64];
+				char diff_frame_filename[64];
+
+				const char* drone_or_clear = capture_is_drone ? "drone" : "clear";
+				snprintf(prefix, sizeof(prefix), "%llu_%s_", generated_timestamp, drone_or_clear);
+				snprintf(current_frame_filename, sizeof(current_frame_filename), "%scurrent_frame.png", prefix);
+				snprintf(previous_frame_filename, sizeof(previous_frame_filename), "%sprevious_frame.png", prefix);
+				snprintf(diff_frame_filename, sizeof(diff_frame_filename), "%sdiff_frame.png", prefix);
+
+				struct data_to_send data[] = {
+					//{current_frame_buf, frame_width, frame_height, 2, "color", current_frame_filename},
+					//{previous_frame_buf, frame_width, frame_height, 2, "color", previous_frame_filename},
+					{unpadded_grayscale_buf, frame_width, frame_height, 1, "grey", current_frame_filename},
+					{diff_grayscale_buf, frame_width, frame_height, 1, "grey", diff_frame_filename},
+					{downscaled_2x2_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, "2x2", current_frame_filename},
+					{downscaled_2x2_diff_grayscale_buf, downscaled_2x2_width, downscaled_2x2_height, 1, "2x2", diff_frame_filename},
+					{downscaled_3x3_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, "3x3", current_frame_filename},
+					{downscaled_3x3_diff_grayscale_buf, downscaled_3x3_width, downscaled_3x3_height, 1, "3x3", diff_frame_filename},
+					{downscaled_4x4_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, "4x4", current_frame_filename},
+					{downscaled_4x4_diff_grayscale_buf, downscaled_4x4_width, downscaled_4x4_height, 1, "4x4", diff_frame_filename},
+				};
+
+				bool transmission_failed = false;
+				for (size_t i = 0; i < sizeof(data) / sizeof(data[0]); i++) {
+					if (!uart_img_send(uart, data[i].buf, data[i].width, data[i].height, data[i].bytes_per_pixel, 1, drone_or_clear, data[i].folder, data[i].filename, RETRY_TRANSMISSIONS_ON_FAILURE)) {
+						LOG_ERR("Failed to send %s", data[i].filename);
+						transmission_failed = true;
+					} else {
+						LOG_INF("Sent %s", data[i].filename);
+					}
+					// k_msleep(5);
+				}
+
+				if (transmission_failed) {
+					LOG_ERR("Failed to send all data for %s", prefix);
+					showing_grayscale = true;
+					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_padded(), true);
+					tft_draw_bounding_box(display, 0, 0, 160, 120, "TRANSMISSION FAILED");
+					k_msleep(2000);
+				} else {
+					generated_timestamp = 0;
+					LOG_INF("Transferred %s", prefix);
+					// preproc_diff_scaling.process();
+					preproc_diff_scaling.process();
+					// k_msleep(sleep_timeouts[sleep_timeout_idx]);
+					preproc_diff_scaling.process();
+					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_padded(), true);
+					k_msleep(sleep_timeouts[sleep_timeout_idx]);
+					preproc_diff_scaling.process();
+					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_diff_grayscale_padded(), true);
+					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_padded(), true);
+					tft_draw_bounding_box(display, 0, 0, 160, 120, drone_or_clear);
+				}
+			}
 		}
 	}
 
