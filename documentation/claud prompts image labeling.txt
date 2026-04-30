@@ -134,3 +134,6 @@ Prompt 21:
 
 Make the labeled and unlabeled count take into account the ignored count, and also keep track of the ignored Count
 
+Prompt 22:
+
+Instead of a shared ignored.txt file, i would like each ignored file to have an empty file called using "{id}_ignored" so that it is easier to merge. This should be in its own ignored folder

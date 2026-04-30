@@ -28,7 +28,8 @@ public partial class MainWindow : Window
     private LabelData? _savedLabel;     // what is on disk for the selected pair
     private HashSet<string> _ignoredIds = new(StringComparer.OrdinalIgnoreCase);
 
-    private string IgnoreFilePath => Path.Combine(DatasetRoot, "ignored.txt");
+    private string IgnoreFolderPath => Path.Combine(DatasetRoot, "ignored");
+    private string IgnoreMarkerPath(string id) => Path.Combine(IgnoreFolderPath, $"{id}_ignored");
 
     private bool _isDragging;
     private Point _dragStart;
@@ -271,26 +272,14 @@ public partial class MainWindow : Window
     private void LoadIgnoreList()
     {
         _ignoredIds.Clear();
-        string path = IgnoreFilePath;
-        if (!File.Exists(path)) return;
-        foreach (string line in File.ReadAllLines(path))
+        string folder = IgnoreFolderPath;
+        if (!Directory.Exists(folder)) return;
+        const string suffix = "_ignored";
+        foreach (string file in Directory.GetFiles(folder))
         {
-            string id = line.Trim();
-            if (!string.IsNullOrEmpty(id)) _ignoredIds.Add(id);
-        }
-    }
-
-    private void SaveIgnoreList()
-    {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(IgnoreFilePath)!);
-            File.WriteAllLines(IgnoreFilePath, _ignoredIds.OrderBy(x => x));
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Could not save ignore list:\n{ex.Message}",
-                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            string name = Path.GetFileName(file);
+            if (name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                _ignoredIds.Add(name[..^suffix.Length]);
         }
     }
 
@@ -638,14 +627,32 @@ public partial class MainWindow : Window
     {
         pair.IsIgnored = true;
         _ignoredIds.Add(pair.Id);
-        SaveIgnoreList();
+        try
+        {
+            Directory.CreateDirectory(IgnoreFolderPath);
+            File.WriteAllText(IgnoreMarkerPath(pair.Id), "");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Could not create ignore marker:\n{ex.Message}",
+                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void RemoveFromIgnoreListCore(ImagePair pair)
     {
         pair.IsIgnored = false;
         _ignoredIds.Remove(pair.Id);
-        SaveIgnoreList();
+        try
+        {
+            string path = IgnoreMarkerPath(pair.Id);
+            if (File.Exists(path)) File.Delete(path);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Could not remove ignore marker:\n{ex.Message}",
+                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void UpdateIgnoreButton(ImagePair? pair)
@@ -719,6 +726,7 @@ public partial class MainWindow : Window
             string cat = pair.Category;
             string id  = pair.Id;
             paths.Add($"labels/{id}.txt");
+            paths.Add($"ignored/{id}_ignored");
             foreach (string folder in viewFolders)
             {
                 paths.Add($"{folder}/{cat}/{id}_{cat}_current_frame.png");
