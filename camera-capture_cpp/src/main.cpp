@@ -337,7 +337,7 @@ int main()
 					uint8_t* current_buffer = showing_grayscale ? preproc_diff_scaling.get_current_grayscale_padded() : preproc_diff_scaling.get_current_diff_grayscale_padded();
 					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, current_buffer, true);
 					tft_draw_bounding_box(display, 0, 0, 160, 120, "SENT OK!");
-					k_msleep(400);
+					k_msleep(200);
 				}
 			}
 			else
@@ -346,13 +346,13 @@ int main()
 				{
 					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_padded(), true);
 					tft_draw_bounding_box(display, 0, 0, 160, 120, "grayscale");
-					k_msleep(200);
+					k_msleep(100);
 				}
 				else
 				{
 					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_diff_grayscale_padded(), true);
 					tft_draw_bounding_box(display, 0, 0, 160, 120, "diff");
-					k_msleep(200);
+					k_msleep(100);
 				}
 
 				showing_grayscale = !showing_grayscale;
