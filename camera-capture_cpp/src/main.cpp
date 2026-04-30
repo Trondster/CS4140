@@ -464,7 +464,15 @@ int main()
 		}
 		else {
 			//Capturing live
-			if (sw0_flag || sw1_flag || sw2_flag) {
+			if (sw1_flag) {
+				//Grayscale / diff switch
+				showing_grayscale = !showing_grayscale;
+				uint8_t* active_grayscale = showing_grayscale ? preproc_diff_scaling.get_current_grayscale_padded() : preproc_diff_scaling.get_current_diff_grayscale_padded();
+				tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, active_grayscale, true);
+				tft_draw_bounding_box(display, 0, 0, 160, 120, showing_grayscale ? "GRAYSCALE" : "DIFF");
+				k_msleep(1000);
+				sw1_flag = false;
+			} else if (sw0_flag || sw1_flag || sw2_flag) {
 				//Failsafe panic
 				uint8_t* active_grayscale = showing_grayscale ? preproc_diff_scaling.get_current_grayscale_padded() : preproc_diff_scaling.get_current_diff_grayscale_padded();
 
@@ -495,7 +503,7 @@ int main()
 				uint8_t *downscaled_4x4_diff_grayscale_buf = preproc_diff_scaling.get_current_diff_downscaled_4x4_nopad();
 
 
-				tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_padded(), true);
+				tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, showing_grayscale ? preproc_diff_scaling.get_current_grayscale_padded() : preproc_diff_scaling.get_current_diff_grayscale_padded(), true);
 				tft_draw_bounding_box(display, 0, 0, 160, 120, capture_is_drone ? "sending drone" : "sending clear");
 
 
@@ -536,7 +544,6 @@ int main()
 
 				if (transmission_failed) {
 					LOG_ERR("Failed to send all data for %s", prefix);
-					showing_grayscale = true;
 					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_padded(), true);
 					tft_draw_bounding_box(display, 0, 0, 160, 120, "TRANSMISSION FAILED");
 					k_msleep(2000);
@@ -550,8 +557,8 @@ int main()
 					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_padded(), true);
 					k_msleep(sleep_timeouts[sleep_timeout_idx]);
 					preproc_diff_scaling.process();
-					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_diff_grayscale_padded(), true);
-					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_padded(), true);
+					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, showing_grayscale ? preproc_diff_scaling.get_current_diff_grayscale_padded() : preproc_diff_scaling.get_current_grayscale_padded(), true);
+					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, showing_grayscale ? preproc_diff_scaling.get_current_grayscale_padded() : preproc_diff_scaling.get_current_diff_grayscale_padded(), true);
 					tft_draw_bounding_box(display, 0, 0, 160, 120, drone_or_clear);
 				}
 			}
