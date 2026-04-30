@@ -6,6 +6,7 @@ namespace ImageLabeler.Models;
 public class UserSettings
 {
     public string DatasetRoot { get; set; } = @"C:\Users\nicol\CS4140\train\dataset";
+    public string MoveDestination { get; set; } = "";
 
     private static readonly string FilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),

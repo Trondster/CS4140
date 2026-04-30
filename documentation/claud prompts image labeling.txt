@@ -105,3 +105,32 @@ No, its only for color, the others where correct
 Prompt 14:
 
 One the file lists currently shown, there should be a warning or error icon if it is missing any image of the types. In other words each image id should have an pair of each of the types, greyscale, color, 2x2, 3x3, and 4x4
+
+Prompt 15:
+
+I want you to remove the color options for extra view as i will delete the color images. I would also like you to add a function to be able to move all the image and labels of an selected id (in the different view folders and label) to a choosen folder (with the same subfolders).
+
+Prompt 16:
+
+The folder to move to should be pre-choosen so that it is faster for moving multiple images in  a row
+
+Prompt 17:
+
+Ok, i now want a function for marking a file as ignored, this means that the file will be marked in the list as ignored and is saved in some file. There should be a hide ignored option. Then, you are going to make a zip function that zips all the the selected dataset folder except of what is ignored.
+
+Prompt 18:
+
+I believe space bar activates the move to function. Space bar should only move on to the next image without saving
+
+Prompt 19:
+
+change the ignore to a button and add a "add to ignore list" and a "add to ignore list and advance"
+
+Prompt 20:
+
+The button for add to ignore list should change dependent on if the file is in the ignore list or not. If it is not it should stay the same, the button should switch to a "remove from ignore list button", the ignore and advance should stay the same
+
+Prompt 21:
+
+Make the labeled and unlabeled count take into account the ignored count, and also keep track of the ignored Count
+

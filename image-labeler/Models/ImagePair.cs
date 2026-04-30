@@ -12,7 +12,16 @@ public class ImagePair
 
     public bool IsLabeled => File.Exists(LabelPath);
     public bool HasMissingFiles { get; set; }
+    public bool IsIgnored { get; set; }
 
-    public string DisplayText =>
-        (IsLabeled ? Id : $"{Id} *") + (HasMissingFiles ? " ⚠" : "");
+    public string DisplayText
+    {
+        get
+        {
+            string text = IsLabeled ? Id : $"{Id} *";
+            if (HasMissingFiles) text += " ⚠";
+            if (IsIgnored)       text += " ~";
+            return text;
+        }
+    }
 }
