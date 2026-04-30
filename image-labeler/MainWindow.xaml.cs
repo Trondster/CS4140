@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -25,6 +26,9 @@ public partial class MainWindow : Window
 
     private ImagePair? _selectedPair;
     private LabelData? _savedLabel;     // what is on disk for the selected pair
+    private HashSet<string> _ignoredIds = new(StringComparer.OrdinalIgnoreCase);
+
+    private string IgnoreFilePath => Path.Combine(DatasetRoot, "ignored.txt");
 
     private bool _isDragging;
     private Point _dragStart;
@@ -41,6 +45,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         _settings = UserSettings.Load();
         FolderPathBox.Text = _settings.DatasetRoot;
+        MoveDestBox.Text   = _settings.MoveDestination;
         Loaded += (_, _) => ScanDataset();
     }
 
@@ -50,7 +55,7 @@ public partial class MainWindow : Window
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (Keyboard.FocusedElement is TextBox or CheckBox or Button) return;
+        if (Keyboard.FocusedElement is TextBox or CheckBox) return;
 
         switch (e.Key)
         {
@@ -85,7 +90,8 @@ public partial class MainWindow : Window
 
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
-        _settings.DatasetRoot = DatasetRoot;
+        _settings.DatasetRoot     = DatasetRoot;
+        _settings.MoveDestination = MoveDestBox.Text.Trim();
         _settings.Save();
     }
 
@@ -96,6 +102,17 @@ public partial class MainWindow : Window
         var dlg = new OpenFolderDialog { Title = "Select dataset root folder" };
         if (dlg.ShowDialog() == true)
             FolderPathBox.Text = dlg.FolderName;
+    }
+
+    private void MoveDestBrowse_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFolderDialog { Title = "Select move destination root" };
+        if (dlg.ShowDialog() == true)
+        {
+            MoveDestBox.Text = dlg.FolderName;
+            _settings.MoveDestination = dlg.FolderName;
+            _settings.Save();
+        }
     }
 
     private void Rescan_Click(object sender, RoutedEventArgs e)
@@ -121,6 +138,47 @@ public partial class MainWindow : Window
             "Label Clear Files", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
+    // ── Extra view ───────────────────────────────────────────────────────────
+
+    // Folder name under DatasetRoot, or null when "(none)" is selected.
+    private string? ExtraViewFolder =>
+        (ExtraViewCombo.SelectedItem as ComboBoxItem)?.Tag is string t && t.Length > 0 ? t : null;
+
+    private void ExtraViewCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ExtraCurrentLabel == null) return;   // fired during InitializeComponent, ignore
+
+        string? folder = ExtraViewFolder;
+        string viewName = (ExtraViewCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+
+        ExtraCurrentLabel.Text = $"Current Frame ({viewName})";
+        ExtraDiffLabel.Text    = $"Diff Frame ({viewName})";
+        ExtraImagesPanel.Visibility = folder != null ? Visibility.Visible : Visibility.Collapsed;
+
+        if (_selectedPair != null)
+            LoadExtraImages(_selectedPair);
+
+        // Sync bounding-box visibility to the new panel state
+        bool boxVisible = BoundingRect1.Visibility == Visibility.Visible && folder != null;
+        ExtraBoundingRect1.Visibility =
+        ExtraBoundingRect2.Visibility = boxVisible ? Visibility.Visible : Visibility.Hidden;
+    }
+
+    private void LoadExtraImages(ImagePair pair)
+    {
+        string? folder = ExtraViewFolder;
+        if (folder == null)
+        {
+            ExtraImage1.Source = ExtraImage2.Source = null;
+            return;
+        }
+        string root = DatasetRoot;
+        string cat  = pair.Category;
+        string id   = pair.Id;
+        ExtraImage1.Source = TryLoadBitmap(Path.Combine(root, folder, cat, $"{id}_{cat}_current_frame.png"));
+        ExtraImage2.Source = TryLoadBitmap(Path.Combine(root, folder, cat, $"{id}_{cat}_diff_frame.png"));
+    }
+
     // ── Dataset scanning ─────────────────────────────────────────────────────
 
     private void ScanDataset()
@@ -132,6 +190,14 @@ public partial class MainWindow : Window
         string labelsDir = Path.Combine(root, "labels");
         _clearPairs = ScanCategory(Path.Combine(root, "grey", "clear"), "clear", labelsDir);
         _dronePairs = ScanCategory(Path.Combine(root, "grey", "drone"), "drone", labelsDir);
+
+        LoadIgnoreList();
+
+        foreach (var pair in _clearPairs.Concat(_dronePairs))
+        {
+            pair.HasMissingFiles = HasMissingExtraFiles(root, pair.Category, pair.Id);
+            pair.IsIgnored       = _ignoredIds.Contains(pair.Id);
+        }
 
         RefreshLists(restoreId);
         if (_selectedPair == null) ClearDisplay();
@@ -185,21 +251,66 @@ public partial class MainWindow : Window
             .ToList();
     }
 
+    private static bool HasMissingExtraFiles(string root, string category, string id)
+    {
+        (string folder, string secondSuffix)[] extras =
+        [
+            ("2x2", "diff_frame"),
+            ("3x3", "diff_frame"),
+            ("4x4", "diff_frame"),
+        ];
+        foreach (var (folder, secondSuffix) in extras)
+        {
+            if (!File.Exists(Path.Combine(root, folder, category, $"{id}_{category}_current_frame.png")) ||
+                !File.Exists(Path.Combine(root, folder, category, $"{id}_{category}_{secondSuffix}.png")))
+                return true;
+        }
+        return false;
+    }
+
+    private void LoadIgnoreList()
+    {
+        _ignoredIds.Clear();
+        string path = IgnoreFilePath;
+        if (!File.Exists(path)) return;
+        foreach (string line in File.ReadAllLines(path))
+        {
+            string id = line.Trim();
+            if (!string.IsNullOrEmpty(id)) _ignoredIds.Add(id);
+        }
+    }
+
+    private void SaveIgnoreList()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(IgnoreFilePath)!);
+            File.WriteAllLines(IgnoreFilePath, _ignoredIds.OrderBy(x => x));
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Could not save ignore list:\n{ex.Message}",
+                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     // ── List population ──────────────────────────────────────────────────────
 
     // Rebuilds both list views, updates counters, and optionally restores selection.
     // After this returns, _selectedPair is set iff a selection was restored.
     private void RefreshLists(string? restoreId = null)
     {
-        bool hideClear = HideClearLabeled.IsChecked == true;
-        bool hideDrone = HideDroneLabeled.IsChecked == true;
+        bool hideClear        = HideClearLabeled.IsChecked == true;
+        bool hideDrone        = HideDroneLabeled.IsChecked == true;
+        bool hideIgnoredClear = HideClearIgnored.IsChecked == true;
+        bool hideIgnoredDrone = HideDroneIgnored.IsChecked == true;
 
-        _visibleClearPairs = hideClear
-            ? _clearPairs.Where(p => !p.IsLabeled).ToList()
-            : _clearPairs.ToList();
-        _visibleDronePairs = hideDrone
-            ? _dronePairs.Where(p => !p.IsLabeled).ToList()
-            : _dronePairs.ToList();
+        _visibleClearPairs = _clearPairs
+            .Where(p => (!hideClear        || !p.IsLabeled) && (!hideIgnoredClear || !p.IsIgnored))
+            .ToList();
+        _visibleDronePairs = _dronePairs
+            .Where(p => (!hideDrone        || !p.IsLabeled) && (!hideIgnoredDrone || !p.IsIgnored))
+            .ToList();
 
         UpdateCounter(ClearCounter, _clearPairs);
         UpdateCounter(DroneCounter, _dronePairs);
@@ -221,9 +332,10 @@ public partial class MainWindow : Window
 
     private static void UpdateCounter(TextBlock block, List<ImagePair> pairs)
     {
-        int labeled   = pairs.Count(p => p.IsLabeled);
-        int unlabeled = pairs.Count - labeled;
-        block.Text = $"Labeled: {labeled}\nUnlabeled: {unlabeled}";
+        int ignored   = pairs.Count(p => p.IsIgnored);
+        int labeled   = pairs.Count(p => !p.IsIgnored && p.IsLabeled);
+        int unlabeled = pairs.Count(p => !p.IsIgnored && !p.IsLabeled);
+        block.Text = $"Labeled: {labeled}\nUnlabeled: {unlabeled}\nIgnored: {ignored}";
     }
 
     // ── Hide-labeled checkboxes ──────────────────────────────────────────────
@@ -269,7 +381,9 @@ public partial class MainWindow : Window
 
         CurrentImage1.Source = TryLoadBitmap(pair.CurrentFramePath);
         CurrentImage2.Source = TryLoadBitmap(pair.DiffFramePath);
+        LoadExtraImages(pair);
 
+        UpdateIgnoreButton(pair);
         _savedLabel = LabelData.TryLoad(pair.LabelPath);
         ApplyLabel(_savedLabel);
     }
@@ -290,8 +404,11 @@ public partial class MainWindow : Window
     {
         CurrentImage1.Source = null;
         CurrentImage2.Source = null;
+        ExtraImage1.Source   = null;
+        ExtraImage2.Source   = null;
         Path1Label.Text = "Current frame: (none)";
         Path2Label.Text = "Diff frame:    (none)";
+        UpdateIgnoreButton(null);
         ApplyLabel(null);
     }
 
@@ -330,14 +447,20 @@ public partial class MainWindow : Window
         double top    = (yc - h / 2) * CanvasH;
         double width  = w * CanvasW;
         double height = h * CanvasH;
-        PlaceRect(BoundingRect1, left, top, width, height);
-        PlaceRect(BoundingRect2, left, top, width, height);
+        PlaceRect(BoundingRect1,      left, top, width, height);
+        PlaceRect(BoundingRect2,      left, top, width, height);
+        PlaceRect(ExtraBoundingRect1, left, top, width, height);
+        PlaceRect(ExtraBoundingRect2, left, top, width, height);
         BoundingRect1.Visibility = BoundingRect2.Visibility = Visibility.Visible;
+        bool extraShown = ExtraImagesPanel.Visibility == Visibility.Visible;
+        ExtraBoundingRect1.Visibility =
+        ExtraBoundingRect2.Visibility = extraShown ? Visibility.Visible : Visibility.Hidden;
     }
 
     private void HideBoxes()
     {
-        BoundingRect1.Visibility = BoundingRect2.Visibility = Visibility.Hidden;
+        BoundingRect1.Visibility      = BoundingRect2.Visibility      = Visibility.Hidden;
+        ExtraBoundingRect1.Visibility = ExtraBoundingRect2.Visibility = Visibility.Hidden;
     }
 
     private static void PlaceRect(Rectangle r, double left, double top, double w, double h)
@@ -419,9 +542,14 @@ public partial class MainWindow : Window
         double w = right - left;
         double h = bottom - top;
 
-        PlaceRect(BoundingRect1, left, top, w, h);
-        PlaceRect(BoundingRect2, left, top, w, h);
+        PlaceRect(BoundingRect1,      left, top, w, h);
+        PlaceRect(BoundingRect2,      left, top, w, h);
+        PlaceRect(ExtraBoundingRect1, left, top, w, h);
+        PlaceRect(ExtraBoundingRect2, left, top, w, h);
         BoundingRect1.Visibility = BoundingRect2.Visibility = Visibility.Visible;
+        bool extraShown = ExtraImagesPanel.Visibility == Visibility.Visible;
+        ExtraBoundingRect1.Visibility =
+        ExtraBoundingRect2.Visibility = extraShown ? Visibility.Visible : Visibility.Hidden;
 
         _suppressEvents = true;
         IsDroneCheckbox.IsChecked = true;
@@ -481,6 +609,199 @@ public partial class MainWindow : Window
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => ApplyLabel(_savedLabel);
+
+    private void IgnoreToggle_Click(object sender, RoutedEventArgs e)
+    {
+        var pair = _selectedPair;
+        if (pair == null) return;
+        if (pair.IsIgnored)
+            RemoveFromIgnoreListCore(pair);
+        else
+            AddToIgnoreListCore(pair);
+        _selectedPair = null;
+        RefreshLists(pair.Id);
+        if (_selectedPair == null) ClearDisplay();
+    }
+
+    private void AddToIgnoreListAndAdvance_Click(object sender, RoutedEventArgs e)
+    {
+        var pair = _selectedPair;
+        if (pair == null) return;
+        string? nextId = FindNextPair()?.Id;
+        AddToIgnoreListCore(pair);
+        _selectedPair = null;
+        RefreshLists(nextId ?? pair.Id);
+        if (_selectedPair == null) ClearDisplay();
+    }
+
+    private void AddToIgnoreListCore(ImagePair pair)
+    {
+        pair.IsIgnored = true;
+        _ignoredIds.Add(pair.Id);
+        SaveIgnoreList();
+    }
+
+    private void RemoveFromIgnoreListCore(ImagePair pair)
+    {
+        pair.IsIgnored = false;
+        _ignoredIds.Remove(pair.Id);
+        SaveIgnoreList();
+    }
+
+    private void UpdateIgnoreButton(ImagePair? pair)
+    {
+        IgnoreToggleButton.Content = pair?.IsIgnored == true
+            ? "Remove from Ignore List"
+            : "Add to Ignore List";
+    }
+
+    // ── Zip ──────────────────────────────────────────────────────────────────
+
+    private void CreateZip_Click(object sender, RoutedEventArgs e)
+    {
+        if (!Directory.Exists(DatasetRoot))
+        {
+            MessageBox.Show("Set a valid dataset root folder first.",
+                "No dataset", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var dlg = new SaveFileDialog
+        {
+            Title = "Save dataset zip",
+            Filter = "ZIP files|*.zip",
+            FileName = Path.GetFileName(DatasetRoot) + ".zip"
+        };
+        if (dlg.ShowDialog() != true) return;
+
+        var excluded = GetIgnoredRelativePaths();
+
+        try
+        {
+            Mouse.OverrideCursor = Cursors.Wait;
+
+            string zipPath = dlg.FileName;
+            if (File.Exists(zipPath)) File.Delete(zipPath);
+
+            int count = 0;
+            using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+            {
+                foreach (string file in Directory.GetFiles(DatasetRoot, "*", SearchOption.AllDirectories))
+                {
+                    string rel = Path.GetRelativePath(DatasetRoot, file).Replace('\\', '/');
+                    if (excluded.Contains(rel)) continue;
+                    zip.CreateEntryFromFile(file, rel);
+                    count++;
+                }
+            }
+
+            MessageBox.Show($"Created zip with {count} file(s):\n{zipPath}",
+                "Zip complete", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Zip failed:\n{ex.Message}",
+                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+        }
+    }
+
+    private HashSet<string> GetIgnoredRelativePaths()
+    {
+        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        string[] viewFolders = ["grey", "2x2", "3x3", "4x4"];
+
+        foreach (var pair in _clearPairs.Concat(_dronePairs).Where(p => p.IsIgnored))
+        {
+            string cat = pair.Category;
+            string id  = pair.Id;
+            paths.Add($"labels/{id}.txt");
+            foreach (string folder in viewFolders)
+            {
+                paths.Add($"{folder}/{cat}/{id}_{cat}_current_frame.png");
+                paths.Add($"{folder}/{cat}/{id}_{cat}_diff_frame.png");
+            }
+        }
+        return paths;
+    }
+
+    private void MoveSelected_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedPair == null) return;
+
+        string dest = MoveDestBox.Text.Trim();
+        if (string.IsNullOrEmpty(dest))
+        {
+            MessageBox.Show("Set a move destination folder in the toolbar first.",
+                "No destination", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        if (string.Equals(Path.GetFullPath(dest), Path.GetFullPath(DatasetRoot),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            MessageBox.Show("Destination must differ from the current dataset root.",
+                "Invalid destination", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        try
+        {
+            string? nextId = FindNextPair()?.Id;
+            MoveFilesForPair(_selectedPair, DatasetRoot, dest);
+
+            if (_selectedPair.Category == "clear") _clearPairs.Remove(_selectedPair);
+            else                                   _dronePairs.Remove(_selectedPair);
+
+            _selectedPair = null;
+            RefreshLists(nextId);
+            if (_selectedPair == null) ClearDisplay();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Move failed:\n{ex.Message}", "Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private static void MoveFilesForPair(ImagePair pair, string sourceRoot, string destRoot)
+    {
+        string cat = pair.Category;
+        string id  = pair.Id;
+
+        // All view folders and their two frame suffixes
+        (string folder, string current, string second)[] views =
+        [
+            ("grey", "current_frame", "diff_frame"),
+            ("2x2",  "current_frame", "diff_frame"),
+            ("3x3",  "current_frame", "diff_frame"),
+            ("4x4",  "current_frame", "diff_frame"),
+        ];
+
+        foreach (var (folder, cur, sec) in views)
+        {
+            MoveIfExists(
+                Path.Combine(sourceRoot, folder, cat, $"{id}_{cat}_{cur}.png"),
+                Path.Combine(destRoot,   folder, cat, $"{id}_{cat}_{cur}.png"));
+            MoveIfExists(
+                Path.Combine(sourceRoot, folder, cat, $"{id}_{cat}_{sec}.png"),
+                Path.Combine(destRoot,   folder, cat, $"{id}_{cat}_{sec}.png"));
+        }
+
+        // Label file
+        MoveIfExists(
+            Path.Combine(sourceRoot, "labels", $"{id}.txt"),
+            Path.Combine(destRoot,   "labels", $"{id}.txt"));
+    }
+
+    private static void MoveIfExists(string src, string dst)
+    {
+        if (!File.Exists(src)) return;
+        Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
+        File.Move(src, dst, overwrite: false);
+    }
 
     // Validates, writes the label file, updates _savedLabel. Returns false on failure.
     private bool DoSave()

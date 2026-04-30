@@ -1,0 +1,136 @@
+Prompt 1:
+
+Using C#:
+We want to create a graphical labeling tool to assist a human operator to find the coordinates of the drone in the image (if any), outputting a single txt files in YOLO format for each entry.
+We wish to classify if our pairs of images contain drones or not, with coordinates of the drones in the images.
+The files are pairs of grayscale PNG images, with paths
+"dataset\grey\clear\<id>_clear_current_frame.png" and
+"dataset\grey\clear\<id>_clear_diff_frame.png" or "dataset\grey\drone\<id>_drone_current_frame.png" and
+"dataset\grey\drone\<id>_drone_diff_frame.png", where "<id>" is a numeric id of the file pair.
+The images are .PNG files with a resolution of 160x120.
+The image files are in folders and with file names containing "drone" or "clear" depending if we have predetermined if they contain a drone or not.
+
+The output files shall be stored as "dataset\labels\<id>.txt" using YOLO format, where <id> is the id of the file pair.
+<label> <x> <y> <width> <height>
+where <label> is 1 for drone and 0 for non-drone. For non-drones, the file should contain
+0 0 0 0 0
+For drones, label should be 1, x and y normalized x and y coordinates of the drone center position, and width and height normalized width and height of the drone bounding box, where x, y, width, height are normalized 0 to 1 of the width and height of the image.  
+The program should have an input field for the dataset root folder.
+The program should then scan through all the folders and show two clickable lists of ids and a status if the corresponding image pair is unlabeled or labeled. A file pair is considered "labeled" if there exists a label file. One list of ids which are drones, and one list which are non-drones (or "clear"). It shall list an asterisk next to the number for unlabelled file pairs.
+There shall be a button "label clear files" which loops through all the unlabeled clear pairs, and creates label files for them.
+There shall be two images showing the two images of the image pair if we click an id. The images should be upscaled to 2x; 320x240. Under the two images it shall show the data of the label file (if any) with drone/nodrone check box, and input fields for x, y, width, height, and a "save" button.
+If the pair is classified as drone, the two images shall have a translucent green rectangle shown over the two images, highlighting the area where the drone is marked.
+It shall be possible to click and drag in the images to resize the drone label box, updating the numbers, so we can drag and change the box, view the result and then click Save to store the updated label file.
+There shall be a "Rescan" button to re-read all the data from disk.
+The code should be easy to maintain - we would probably like to tweak it manually afterwards.
+
+The GUI should then show:
+Input field with path to the root dataset folder.
+A scrollable, clickable list of all found "clear" ids (with an asterisk for unlabelled pairs).
+Two image placeholders, resolution 320x240 each.
+A scrollable, clickable list of all found "drone" ids (with an asterisk for unlabelled pairs).
+Fields showing data for the currently clicked ids:
+Labels with paths to the two image files
+Checkbox for drone or not
+Input boxes for x, y, width, height
+Buttons "Save" or "Cancel" ("Cancel" reverting to the stored label file data, if any - and "Save" updating the label file).
+Button "Rescan" finding all the file pairs and label data files.
+Button "Label clear files" which creates label files for all clear file pairs that do not have a label file.'
+
+Prompt 2:
+
+I get an error:
+Exception has occurred: CLR/System.Windows.Markup.XamlParseException
+An exception of type 'System.Windows.Markup.XamlParseException' occurred in PresentationFramework.dll but was not handled in user code: ''Provide value on 'System.Windows.Baml2006.TypeConverterMarkupExtension' threw an exception.' Line number '52' and line position '58'.'
+ Inner exceptions found, see $exception in variables window for more details.
+ Innermost exception 	 System.ArgumentException : Requested value 'Crosshair' was not found.
+   at System.Enum.TryParseByName[TStorage](RuntimeType enumType, ReadOnlySpan`1 value, Boolean ignoreCase, Boolean throwOnFailure, TStorage& result)
+   at System.Enum.TryParseByValueOrName[TUnderlying,TStorage](RuntimeType enumType, ReadOnlySpan`1 value, Boolean ignoreCase, Boolean throwOnFailure, TUnderlying& result)
+   at System.Enum.TryParse(Type enumType, ReadOnlySpan`1 value, Boolean ignoreCase, Boolean throwOnFailure, Object& result)
+   at System.Enum.Parse(Type enumType, String value, Boolean ignoreCase)
+   at System.Windows.Input.CursorConverter.ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, Object value)
+   at MS.Internal.Xaml.Runtime.ClrObjectRuntime.CallProvideValue(MarkupExtension me, IServiceProvider serviceProvider)
+
+Prompt 3:
+
+Make a user-specific project setting file containing the root path. This user should have the path "C:\Users\nicol\CS4140\train\dataset" as default.
+Make the lists show a counter above showing the number of displayed items, both the number of labeled and unlabeled files.
+Make a checkbox over each list "hide labeled entries" which hides the labeled entries from the list.
+Make an extra Save button "Save and Advance" which also advances to the next shown item in the list.
+
+Prompt 4:
+
+Add a .gitignore file fiding unwanted files, including bin, obj and probably .Claude
+
+Prompt 5:
+
+After dragging an image location, make pressing the enter key do "Advance and Save".
+
+Prompt 6:
+
+This is very good - we are so far extremely happy with the result.
+And - have the program do a rescan on startup.
+
+Prompt 7:
+
+Make the cursor have a red tint, to get better contrast to the gray image.
+
+Prompt 8:
+
+Make space bar advance to the next image without saving.
+
+Prompt 9:
+
+Make the arrow keys also go up and down without saving
+
+Prompt 10:
+
+Above the two greyscale images currently showing the image pairs and for adding bounding box, there should be an option for selecting to view the equivalent pairs of color, 2x2, 3x3, and 4x4 with the bounding boxes in the equivalent positions. There should be a dropdown, and remember to have an option of not showing anything extra. The images should be scaled to the same size as the currently shown greyscales, and should also be position in the similar way, with the current picture to the left and diff or previous image to the right
+
+Prompt 11:
+
+Got an error: 
+Unhandled exception. System.Reflection.TargetInvocationException: Exception has been thrown by the target of an invocation.
+ ---> System.NullReferenceException: Object reference not set to an instance of an object.
+   at ImageLabeler.MainWindow.ExtraViewCombo_SelectionChanged(Object sender, SelectionChangedEventArgs e) in c:\Users\nicol\CS4140\image-labeler\MainWindow.xaml.cs:line 135
+
+Prompt 12:
+
+The color frames is wrong, its for example: 75030_clear_previous_frame.png, 75030_clear_previous_frame.png
+
+Prompt 13:
+
+No, its only for color, the others where correct
+
+Prompt 14:
+
+One the file lists currently shown, there should be a warning or error icon if it is missing any image of the types. In other words each image id should have an pair of each of the types, greyscale, color, 2x2, 3x3, and 4x4
+
+Prompt 15:
+
+I want you to remove the color options for extra view as i will delete the color images. I would also like you to add a function to be able to move all the image and labels of an selected id (in the different view folders and label) to a choosen folder (with the same subfolders).
+
+Prompt 16:
+
+The folder to move to should be pre-choosen so that it is faster for moving multiple images in  a row
+
+Prompt 17:
+
+Ok, i now want a function for marking a file as ignored, this means that the file will be marked in the list as ignored and is saved in some file. There should be a hide ignored option. Then, you are going to make a zip function that zips all the the selected dataset folder except of what is ignored.
+
+Prompt 18:
+
+I believe space bar activates the move to function. Space bar should only move on to the next image without saving
+
+Prompt 19:
+
+change the ignore to a button and add a "add to ignore list" and a "add to ignore list and advance"
+
+Prompt 20:
+
+The button for add to ignore list should change dependent on if the file is in the ignore list or not. If it is not it should stay the same, the button should switch to a "remove from ignore list button", the ignore and advance should stay the same
+
+Prompt 21:
+
+Make the labeled and unlabeled count take into account the ignored count, and also keep track of the ignored Count
+

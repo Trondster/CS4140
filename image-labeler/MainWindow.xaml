@@ -11,13 +11,22 @@
         <Border DockPanel.Dock="Top"
                 BorderBrush="#CCCCCC" BorderThickness="0,0,0,1"
                 Padding="8,6">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Dataset folder:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                <TextBox x:Name="FolderPathBox" Width="380" VerticalAlignment="Center"
-                         Padding="4,3" Margin="0,0,6,0"/>
-                <Button Content="Browse…"          Click="Browse_Click"         Padding="8,3" Margin="0,0,6,0"/>
-                <Button Content="Rescan"            Click="Rescan_Click"         Padding="8,3" Margin="0,0,6,0"/>
-                <Button Content="Label Clear Files" Click="LabelClearFiles_Click" Padding="8,3"/>
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock Text="Dataset folder:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox x:Name="FolderPathBox" Width="380" VerticalAlignment="Center"
+                             Padding="4,3" Margin="0,0,6,0"/>
+                    <Button Content="Browse…"          Click="Browse_Click"          Padding="8,3" Margin="0,0,6,0"/>
+                    <Button Content="Rescan"            Click="Rescan_Click"          Padding="8,3" Margin="0,0,6,0"/>
+                    <Button Content="Label Clear Files" Click="LabelClearFiles_Click" Padding="8,3" Margin="0,0,6,0"/>
+                    <Button Content="Create Zip…"      Click="CreateZip_Click"       Padding="8,3"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Move destination:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox x:Name="MoveDestBox" Width="380" VerticalAlignment="Center"
+                             Padding="4,3" Margin="0,0,6,0"/>
+                    <Button Content="Browse…" Click="MoveDestBrowse_Click" Padding="8,3"/>
+                </StackPanel>
             </StackPanel>
         </Border>
 
@@ -34,9 +43,12 @@
                 <TextBlock DockPanel.Dock="Top" Text="Clear" FontWeight="Bold" Margin="0,0,0,3"/>
                 <TextBlock DockPanel.Dock="Top" x:Name="ClearCounter"
                            FontSize="11" Foreground="#555555" Margin="0,0,0,3"/>
-                <CheckBox  DockPanel.Dock="Top" x:Name="HideClearLabeled" Content="Hide labeled"
-                           FontSize="11" Margin="0,0,0,4"
-                           Checked="HideLabeled_Changed" Unchecked="HideLabeled_Changed"/>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,4">
+                    <CheckBox x:Name="HideClearLabeled" Content="Hide labeled" FontSize="11" Margin="0,0,6,0"
+                              Checked="HideLabeled_Changed" Unchecked="HideLabeled_Changed"/>
+                    <CheckBox x:Name="HideClearIgnored" Content="Hide ignored" FontSize="11"
+                              Checked="HideLabeled_Changed" Unchecked="HideLabeled_Changed"/>
+                </StackPanel>
                 <ListBox x:Name="ClearList"
                          SelectionChanged="ClearList_SelectionChanged"
                          FontFamily="Consolas" FontSize="12"
@@ -49,7 +61,47 @@
                           HorizontalScrollBarVisibility="Auto">
                 <StackPanel Margin="6" HorizontalAlignment="Center">
 
-                    <!-- Images -->
+                    <!-- Extra view selector -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
+                        <TextBlock Text="Extra view:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="ExtraViewCombo" Width="100"
+                                  SelectionChanged="ExtraViewCombo_SelectionChanged">
+                            <ComboBoxItem Content="(none)" Tag=""    IsSelected="True"/>
+                            <ComboBoxItem Content="2×2"    Tag="2x2"/>
+                            <ComboBoxItem Content="3×3"    Tag="3x3"/>
+                            <ComboBoxItem Content="4×4"    Tag="4x4"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Extra images — collapsed when (none) is selected -->
+                    <StackPanel x:Name="ExtraImagesPanel" Orientation="Horizontal"
+                                HorizontalAlignment="Center" Margin="0,0,0,8"
+                                Visibility="Collapsed">
+                        <StackPanel Margin="0,0,8,0">
+                            <TextBlock x:Name="ExtraCurrentLabel" Text="Current Frame"
+                                       HorizontalAlignment="Center" FontWeight="SemiBold" Margin="0,0,0,3"/>
+                            <Canvas x:Name="ExtraCanvas1" Width="320" Height="240"
+                                    Background="#222222" ClipToBounds="True">
+                                <Image x:Name="ExtraImage1" Width="320" Height="240" Stretch="Fill"/>
+                                <Rectangle x:Name="ExtraBoundingRect1"
+                                           Stroke="#00FF00" StrokeThickness="2"
+                                           Fill="#3300FF00" Visibility="Hidden"/>
+                            </Canvas>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock x:Name="ExtraDiffLabel" Text="Diff Frame"
+                                       HorizontalAlignment="Center" FontWeight="SemiBold" Margin="0,0,0,3"/>
+                            <Canvas x:Name="ExtraCanvas2" Width="320" Height="240"
+                                    Background="#222222" ClipToBounds="True">
+                                <Image x:Name="ExtraImage2" Width="320" Height="240" Stretch="Fill"/>
+                                <Rectangle x:Name="ExtraBoundingRect2"
+                                           Stroke="#00FF00" StrokeThickness="2"
+                                           Fill="#3300FF00" Visibility="Hidden"/>
+                            </Canvas>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Greyscale images -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
 
                         <StackPanel Margin="0,0,8,0">
@@ -106,7 +158,7 @@
                     <TextBlock x:Name="Path2Label" Text="Diff frame:    (none)"
                                Margin="0,0,0,10" TextTrimming="CharacterEllipsis"/>
 
-                    <!-- Drone checkbox -->
+                    <!-- Classification -->
                     <CheckBox x:Name="IsDroneCheckbox" Content="Drone"
                               Margin="0,0,0,8"
                               Checked="IsDroneCheckbox_Changed"
@@ -128,11 +180,20 @@
                                  TextChanged="BBoxField_TextChanged"/>
                     </StackPanel>
 
-                    <!-- Save / Save and Advance / Cancel -->
-                    <StackPanel Orientation="Horizontal">
+                    <!-- Save / Save and Advance / Cancel / Move -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                         <Button Content="Save"             Click="Save_Click"          Width="80" Padding="5,4" Margin="0,0,8,0"/>
                         <Button Content="Save and Advance" Click="SaveAndAdvance_Click"           Padding="5,4" Margin="0,0,8,0"/>
-                        <Button Content="Cancel"           Click="Cancel_Click"         Width="80" Padding="5,4"/>
+                        <Button Content="Cancel"           Click="Cancel_Click"         Width="80" Padding="5,4" Margin="0,0,8,0"/>
+                        <Button Content="Move to…"         Click="MoveSelected_Click"             Padding="5,4"/>
+                    </StackPanel>
+
+                    <!-- Ignore -->
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="IgnoreToggleButton"
+                                Content="Add to Ignore List"
+                                Click="IgnoreToggle_Click"           Padding="5,4" Margin="0,0,8,0"/>
+                        <Button Content="Add to Ignore List and Advance" Click="AddToIgnoreListAndAdvance_Click"  Padding="5,4"/>
                     </StackPanel>
 
                 </StackPanel>
@@ -143,9 +204,12 @@
                 <TextBlock DockPanel.Dock="Top" Text="Drone" FontWeight="Bold" Margin="0,0,0,3"/>
                 <TextBlock DockPanel.Dock="Top" x:Name="DroneCounter"
                            FontSize="11" Foreground="#555555" Margin="0,0,0,3"/>
-                <CheckBox  DockPanel.Dock="Top" x:Name="HideDroneLabeled" Content="Hide labeled"
-                           FontSize="11" Margin="0,0,0,4"
-                           Checked="HideLabeled_Changed" Unchecked="HideLabeled_Changed"/>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,4">
+                    <CheckBox x:Name="HideDroneLabeled" Content="Hide labeled" FontSize="11" Margin="0,0,6,0"
+                              Checked="HideLabeled_Changed" Unchecked="HideLabeled_Changed"/>
+                    <CheckBox x:Name="HideDroneIgnored" Content="Hide ignored" FontSize="11"
+                              Checked="HideLabeled_Changed" Unchecked="HideLabeled_Changed"/>
+                </StackPanel>
                 <ListBox x:Name="DroneList"
                          SelectionChanged="DroneList_SelectionChanged"
                          FontFamily="Consolas" FontSize="12"
