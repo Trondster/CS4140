@@ -1,2 +1,4 @@
 *.png
 *.txt
+ignored/*
+dataset/ignored/*

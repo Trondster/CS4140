@@ -486,7 +486,11 @@ int main()
 			}
 			else {
 				//Capturing!
-				generated_timestamp = k_uptime_get();
+				if (generated_timestamp == 0) {
+					//Keeping existing timestamp to retry if the transmission failed
+					LOG_INF("Retrying %llu", generated_timestamp);
+					generated_timestamp = k_uptime_get();
+				}
 				preproc_diff_scaling.prepare_data();
 
 				// The various buffers to send:
@@ -546,7 +550,7 @@ int main()
 					LOG_ERR("Failed to send all data for %s", prefix);
 					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, preproc_diff_scaling.get_current_grayscale_padded(), true);
 					tft_draw_bounding_box(display, 0, 0, 160, 120, "TRANSMISSION FAILED");
-					k_msleep(2000);
+					k_msleep(1000);
 				} else {
 					generated_timestamp = 0;
 					LOG_INF("Transferred %s", prefix);
