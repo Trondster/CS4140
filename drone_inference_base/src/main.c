@@ -2,12 +2,19 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 
+#include "inference.h"
+
 #include "..\..\lib\c\ov7670.h"
 #include "..\..\lib\c\fifo.h"
 #include "..\..\lib\c\tft_display.h"
 #include "..\..\lib\c\pixel_conversion.h"
 
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+
 #define DEBOUNCE_MS       80
+
+#define NEW_IMAGE_TIMEOUT 400
 
 #ifdef CONFIG_SCALING_1x1
 #define PIC_SCALING 1
@@ -106,6 +113,16 @@ int main(void)
 {
 	const struct device *display = TFT_DEVICE();
 
+	//Setting up Inference...
+	bool inference_ok = (drone_inference_init() == 0);
+	if (!inference_ok) {
+		LOG_ERR("Inference init failed\n");
+		return -1;
+	}
+	//Finished setting up Inference
+
+
+
 	if (tft_init(display) != 0) {
 		LOG_ERR("Display not ready\n");
 		return -1;
@@ -134,16 +151,39 @@ int main(void)
    uint8_t* current_buffer = gray_image_buffer_a;
    uint8_t* other_buffer = gray_image_buffer_b;
    bool current_is_a = true;
-   read_grayscale_to_image_buffer(current_buffer);
+
+	int64_t prev_timestamp;
+
+	read_grayscale_to_image_buffer(current_buffer);
+	prev_timestamp = k_uptime_get();
 
    bool show_grayscale = true;
-   while (1) {
+
+   bool show_nodrone = false;
+
+	while (1) {
 
       //Preparing the next frame
       current_is_a = !current_is_a;
       current_buffer = current_is_a ? gray_image_buffer_a : gray_image_buffer_b;
       other_buffer = current_is_a ? gray_image_buffer_b : gray_image_buffer_a;
+
+		const int64_t curr_timestamp = k_uptime_get();
+		const int64_t delta_ms = curr_timestamp - prev_timestamp;
+		//delta_ms is about 214-ish milliseconds.
+		if (delta_ms > NEW_IMAGE_TIMEOUT) {
+			//Reading multiple times, to ensure that the camera works!
+			read_grayscale_to_image_buffer(other_buffer);
+			read_grayscale_to_image_buffer(other_buffer);
+
+			//This is the "real" previous image
+			read_grayscale_to_image_buffer(other_buffer);
+			//Suitable sleep duration - we want a difference in the last two images
+			k_msleep(100);
+		}
+
       read_grayscale_to_image_buffer(current_buffer);
+		prev_timestamp = k_uptime_get();
       overwrite_unpadded_previous_grayscale_with_diff_minus(current_buffer, other_buffer, SCALED_W, SCALED_H, GRAYSCALE_DIFF_GATE_VALUE);
 
       bool got_sw0 = false;
@@ -152,14 +192,65 @@ int main(void)
          got_sw0 = true;
          show_grayscale = !show_grayscale;
       }
+      bool got_sw1 = false;
+		if (sw1_flag) {
+			sw1_flag = false;
+         got_sw1 = true;
+         show_nodrone = !show_nodrone;
+      }
 
       uint8_t* shown_buffer = show_grayscale ? current_buffer : other_buffer;
 
       tft_draw_scaled_grayscale_image(display, 0, 0, SCALED_W, SCALED_H, shown_buffer, PIC_SCALING);
-      if (got_sw0) {
+		if (got_sw0) {
       	tft_draw_bounding_box(display, 0, 0, 160, 120, show_grayscale ? "grayscale": "diff");
          k_msleep(200);
-      }
+      } else if (got_sw1) {
+      	tft_draw_bounding_box(display, 0, 0, 160, 120, show_nodrone ? "Show Nodrone": "Hide Nodrone");
+         k_msleep(200);
+      } else {
+         drone_result_t result;
+         int rc = drone_inference_run(current_buffer, other_buffer, SCALED_W * SCALED_H, &result);
+
+			char logtext[30];
+			int decimals = (int)(result.confidence * 1000);
+			if (decimals == 1000) {
+				decimals = 999;
+			}
+
+			snprintf(logtext, sizeof(logtext), "%s .%03d", result.detected ? "D" : "Nodrone", decimals);
+
+			if (rc != 0) {
+            tft_draw_bounding_box(display, 0, 0, IMG_W, IMG_H, "ERROR");
+			}
+			else if (result.detected) {
+				int box_w = (int)(result.w * IMG_W);
+            int box_h = (int)(result.h * IMG_H);
+				box_w = MIN(box_w, IMG_W);
+				box_h = MIN(box_h, IMG_H);
+
+				int box_x = (int)((result.x - (result.w / 2)) * IMG_W);
+            int box_y = (int)((result.y - (result.h / 2)) * IMG_H);
+				box_x = MAX(box_x, 0); 
+				box_x = MIN(box_x, IMG_W);
+				box_y = MAX(box_y, 0);
+				box_y = MIN(box_y, IMG_H);
+
+				if (box_x + box_w > IMG_W) {
+					box_w = IMG_W - box_x;
+				}
+
+				if (box_y + box_h > IMG_H) {
+					box_y = IMG_H - box_y;
+				}
+
+            tft_draw_bounding_box(display, box_x, box_y, box_w, box_h, logtext);
+         } else {
+				if (show_nodrone) {
+					tft_draw_bounding_box(display, 0, 0, IMG_W, IMG_H, logtext);
+				}
+			}
+		}
 
       k_msleep(10);
    }
