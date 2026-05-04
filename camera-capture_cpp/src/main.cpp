@@ -8,6 +8,7 @@
  */
 
 #include <cstdint>
+#include <stdlib.h>
 
 // Should not have extern "C".
 #include <zephyr/kernel.h>
@@ -166,6 +167,16 @@ const int downscaled_3x3_width = IMG_W / 3;
 const int downscaled_4x4_height = IMG_H / 4;
 const int downscaled_4x4_width = IMG_W / 4;
 
+int64_t base_offset = 0;
+
+int64_t new_capture_id() {
+	if (base_offset == 0) {
+		int my_base = (k_uptime_get() % 1000001);
+		base_offset = my_base * (int64_t)1000000;
+	}
+	return base_offset + k_uptime_get();
+}
+
 int main()
 {
 	LOG_INF("*** CPP Camera capture ***");
@@ -282,7 +293,7 @@ int main()
 
 				//Hacky invariant: Data is ready if and only if the timestamp is set.
 				if (generated_timestamp == 0) {
-					generated_timestamp = k_uptime_get();
+					generated_timestamp = new_capture_id();
 					preproc_diff_scaling.prepare_data();
 				}
 
@@ -335,7 +346,7 @@ int main()
 					} else {
 						LOG_INF("Sent %s", data[i].filename);
 					}
-					k_msleep(10);
+					k_msleep(1);
 				}
 
 				if (transmission_failed) {
@@ -357,7 +368,7 @@ int main()
 					uint8_t* current_buffer = showing_grayscale ? preproc_diff_scaling.get_current_grayscale_padded() : preproc_diff_scaling.get_current_diff_grayscale_padded();
 					tft_draw_grayscale_image(display, 0, 0, IMG_W, IMG_H, current_buffer, true);
 					tft_draw_bounding_box(display, 0, 0, 160, 120, "SENT OK!");
-					k_msleep(200);
+					k_msleep(100);
 				}
 			}
 			else
@@ -486,10 +497,10 @@ int main()
 			}
 			else {
 				//Capturing!
+				//Keeping existing timestamp to retry if the transmission failed
 				if (generated_timestamp == 0) {
-					//Keeping existing timestamp to retry if the transmission failed
 					LOG_INF("Retrying %llu", generated_timestamp);
-					generated_timestamp = k_uptime_get();
+					generated_timestamp = new_capture_id();
 				}
 				preproc_diff_scaling.prepare_data();
 
