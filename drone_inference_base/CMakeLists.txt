@@ -7,6 +7,7 @@ target_sources(
    app
    PRIVATE
    src/main.c
+   src/inference.cc
     ../lib/c/ov7670.c
     ../lib/c/fifo.c
     ../lib/c/tft_display.c

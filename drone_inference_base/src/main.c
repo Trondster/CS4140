@@ -6,6 +6,7 @@
 #include "..\..\lib\c\fifo.h"
 #include "..\..\lib\c\tft_display.h"
 #include "..\..\lib\c\pixel_conversion.h"
+#include "inference.h"
 
 #define DEBOUNCE_MS       80
 
@@ -127,6 +128,11 @@ int main(void)
 		return -ENODEV;
 	}
 
+	bool inference_ok = (drone_inference_init() == 0);
+	if (!inference_ok) {
+		LOG_ERR("Inference init failed\n");
+	}
+
 	k_msleep(300);   /* auto-exposure settle */
 	
 	tft_fill_screen(display, TFT_COLOR_BLACK);
@@ -137,6 +143,7 @@ int main(void)
    read_grayscale_to_image_buffer(current_buffer);
 
    bool show_grayscale = true;
+   bool run_inference = true;
    while (1) {
 
       //Preparing the next frame
@@ -153,12 +160,38 @@ int main(void)
          show_grayscale = !show_grayscale;
       }
 
+      if (sw1_flag) {
+         sw1_flag = false;
+         run_inference = !run_inference;
+         LOG_INF("Inference %s", run_inference ? "ON" : "OFF");
+      }
+
       uint8_t* shown_buffer = show_grayscale ? current_buffer : other_buffer;
 
       tft_draw_scaled_grayscale_image(display, 0, 0, SCALED_W, SCALED_H, shown_buffer, PIC_SCALING);
       if (got_sw0) {
       	tft_draw_bounding_box(display, 0, 0, 160, 120, show_grayscale ? "grayscale": "diff");
          k_msleep(200);
+      }
+
+      /* Run drone detection on current frame + motion diff */
+      if (inference_ok && run_inference) {
+         drone_result_t result;
+         int rc = drone_inference_run(current_buffer, other_buffer,
+                                      SCALED_W * SCALED_H, &result);
+         if (rc == 0 && result.detected) {
+            /* Scale normalized bbox to screen pixels (image drawn at PIC_SCALING×) */
+            int bx = (int)(result.x * SCALED_W * PIC_SCALING);
+            int by = (int)(result.y * SCALED_H * PIC_SCALING);
+            int bw = (int)(result.w * SCALED_W * PIC_SCALING);
+            int bh = (int)(result.h * SCALED_H * PIC_SCALING);
+            /* Clamp to image area */
+            if (bx < 0) bx = 0;
+            if (by < 0) by = 0;
+            if (bx + bw > SCALED_W * PIC_SCALING) bw = SCALED_W * PIC_SCALING - bx;
+            if (by + bh > SCALED_H * PIC_SCALING) bh = SCALED_H * PIC_SCALING - by;
+            tft_draw_bounding_box(display, bx, by, bw, bh, "drone");
+         }
       }
 
       k_msleep(10);
