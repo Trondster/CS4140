@@ -25,7 +25,7 @@ extern "C" {
 #define UART_IMG_NAK  0x15u
 
 /* Milliseconds to wait for ACK/NAK before treating the attempt as failed. */
-#define UART_IMG_ACK_TIMEOUT_MS  2000
+#define UART_IMG_ACK_TIMEOUT_MS  1000
 
 /* Maximum payload bytes per data packet (must match PACKET_SIZE in receive_image.py). */
 #define UART_IMG_PACKET_SIZE  512u

@@ -26,7 +26,7 @@ static bool wait_for_ack(const struct device *uart)
 		if (uart_poll_in(uart, &c) == 0) {
 			return c == UART_IMG_ACK;
 		}
-		k_sleep(K_MSEC(1));
+		k_msleep(1);
 	}
 	return false;
 }
@@ -56,13 +56,13 @@ static bool send_packet(const struct device *uart, uint16_t seq,
 	}
 
 	for (uint8_t attempt = 0; attempt < max_tries; attempt++) {
+		k_msleep(10 * attempt);
 		uart_write(uart, pkt_hdr, sizeof(pkt_hdr));
 		uart_write(uart, data, len);
 		uart_write(uart, &checksum, 1);
 		if (wait_for_ack(uart)) {
 			return true;
 		}
-		k_msleep(10 * (attempt + 1));
 	}
 	return false;
 }
