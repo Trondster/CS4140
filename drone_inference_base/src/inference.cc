@@ -8,7 +8,7 @@
  */
 
 #include "inference.h"
-#include "model_drone_detector_ptq_drone_int8.h"
+#include "model_ptq_drone_int8.h"
 
 #include <string.h>
 #include <math.h>
@@ -60,7 +60,7 @@ extern "C" int drone_inference_init(void)
 {
 	tflite::InitializeTarget();
 
-	g_model = tflite::GetModel(tf_drone_detector_model_ptq);
+	g_model = tflite::GetModel(tf_model_ptq);
 	if (g_model->version() != TFLITE_SCHEMA_VERSION) {
 		MicroPrintf("TFLM schema mismatch: model=%d, runtime=%d",
 			    g_model->version(), TFLITE_SCHEMA_VERSION);
@@ -83,7 +83,7 @@ extern "C" int drone_inference_init(void)
 	g_interp = &static_interp;
 
 	if (g_interp->AllocateTensors() != kTfLiteOk) {
-		MicroPrintf("AllocateTensors() failed – arena too small?");
+		MicroPrintf("AllocateTensors() failed - arena too small?");
 		return -2;
 	}
 
