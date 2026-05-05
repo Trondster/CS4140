@@ -297,20 +297,25 @@ void tft_draw_scaled_grayscale_image(const struct device *dev, int x, int y, int
 
 
 /* ── Computer-vision overlays ───────────────────────────────────────────── */
-
 void tft_draw_bounding_box(const struct device *dev, int x, int y, int w,
 			   int h, const char *label)
+{
+	tft_draw_bounding_box_color(dev, x, y, w, h, label, TFT_COLOR_YELLOW);
+}
+
+void tft_draw_bounding_box_color(const struct device *dev, int x, int y, int w,
+			   int h, const char *label, const uint16_t color)
 {
 	/* 2-pixel-thick border */
 	for (int t = 0; t < 2; t++) {
 		tft_draw_hline(dev, x + t,         y + t,         w - 2 * t,
-			       TFT_COLOR_YELLOW);
+			       color);
 		tft_draw_hline(dev, x + t,         y + h - 1 - t, w - 2 * t,
-			       TFT_COLOR_YELLOW);
+			       color);
 		tft_draw_vline(dev, x + t,         y + t,         h - 2 * t,
-			       TFT_COLOR_YELLOW);
+			       color);
 		tft_draw_vline(dev, x + w - 1 - t, y + t,         h - 2 * t,
-			       TFT_COLOR_YELLOW);
+			       color);
 	}
 
 	if (!label || !*label) {
@@ -326,7 +331,6 @@ void tft_draw_bounding_box(const struct device *dev, int x, int y, int w,
 		tag_w = w;
 	}
 
-	tft_fill_rect(dev, x + 2, y + 2, tag_w, tag_h, TFT_COLOR_YELLOW);
-	tft_draw_string(dev, x + 4, y + 4, label, TFT_COLOR_BLACK,
-			TFT_COLOR_YELLOW);
+	tft_fill_rect(dev, x + 2, y + 2, tag_w, tag_h, color);
+	tft_draw_string(dev, x + 4, y + 4, label, color == TFT_COLOR_BLACK ? TFT_COLOR_WHITE : TFT_COLOR_BLACK, color);
 }
