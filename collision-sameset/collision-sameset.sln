@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "collision-sameset", "collision-sameset.csproj", "{AD011D5A-90D1-ABCD-2ACF-1D3E8535B9B5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AD011D5A-90D1-ABCD-2ACF-1D3E8535B9B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD011D5A-90D1-ABCD-2ACF-1D3E8535B9B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD011D5A-90D1-ABCD-2ACF-1D3E8535B9B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD011D5A-90D1-ABCD-2ACF-1D3E8535B9B5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EDC837C8-FF57-4F6D-B68C-838F75B696D4}
+	EndGlobalSection
+EndGlobal
