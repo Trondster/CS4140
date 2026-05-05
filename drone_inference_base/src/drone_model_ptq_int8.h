@@ -1,7 +1,7 @@
 // Auto-generated on 2026-05-04
 // Model: drone_model_ptq_int8.tflite  |  Quantization: INT8 PTQ  |  Size: 95800 bytes
-#ifndef TF_DRONE_MODEL_DRONE_PTQ_H
-#define TF_DRONE_MODEL_DRONE_PTQ_H
+#ifndef TF_DRONE_MODEL_PTQ_H
+#define TF_DRONE_MODEL_PTQ_H
 #include <stdint.h>
 #include <stdalign.h>
 
