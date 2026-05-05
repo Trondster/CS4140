@@ -1,11 +1,11 @@
 // Auto-generated on 2026-05-04
-// Model: model_ptq_int8.tflite  |  Quantization: INT8 PTQ  |  Size: 95800 bytes
-#ifndef TF_MODEL_PTQ_H
-#define TF_MODEL_PTQ_H
+// Model: drone_model_ptq_int8.tflite  |  Quantization: INT8 PTQ  |  Size: 95800 bytes
+#ifndef TF_DRONE_MODEL_DRONE_PTQ_H
+#define TF_DRONE_MODEL_DRONE_PTQ_H
 #include <stdint.h>
 #include <stdalign.h>
 
-alignas(16) const uint8_t tf_model_ptq[] = {
+alignas(16) const uint8_t tf_drone_model_ptq[] = {
   0x20, 0x00, 0x00, 0x00, 0x54, 0x46, 0x4C, 0x33, 0x00, 0x00, 0x00, 0x00,
   0x14, 0x00, 0x20, 0x00, 0x1C, 0x00, 0x18, 0x00, 0x14, 0x00, 0x10, 0x00,
   0x0C, 0x00, 0x00, 0x00, 0x08, 0x00, 0x04, 0x00, 0x14, 0x00, 0x00, 0x00,
@@ -7991,6 +7991,6 @@ alignas(16) const uint8_t tf_model_ptq[] = {
   0x0C, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x03
 };
-const unsigned int tf_model_ptq_len = 95800;
+const unsigned int tf_drone_model_ptq_len = 95800;
 
-#endif  // TF_DRONE_DETECTOR_MODEL_PTQ_H
+#endif  // TF_DRONE_MODEL_PTQ_H
