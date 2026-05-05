@@ -29,7 +29,8 @@
  * Reduce if the linker reports an out-of-memory error; increase (up to the
  * available SRAM) if AllocateTensors() fails at runtime.
  */
-static constexpr int kArenaSize = 100 * 1024;
+//static constexpr int kArenaSize = (163 * 1024) + 208;
+static constexpr int kArenaSize = (160 * 1024) + 0;
 alignas(16) static uint8_t g_arena[kArenaSize];
 
 /* ── Static TFLM objects ─────────────────────────────────────────────────── */

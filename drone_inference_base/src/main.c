@@ -176,7 +176,7 @@ int main(void)
 
 		const int64_t curr_timestamp = k_uptime_get();
 		const int64_t delta_ms = curr_timestamp - prev_timestamp;
-		// delta_ms is about 214-ish milliseconds.
+		// delta_ms is about 200 milliseconds.
 		if (delta_ms > NEW_IMAGE_TIMEOUT)
 		{
 			// Reading multiple times, to ensure that the camera works!
@@ -235,12 +235,26 @@ int main(void)
 
 			snprintf(logtext, sizeof(logtext), "%s .%03d", result.detected ? "D" : "Nodrone", decimals);
 
+			uint16_t color;
 			if (rc != 0)
 			{
-				tft_draw_bounding_box(display, 0, 0, IMG_W, IMG_H, "ERROR");
+				tft_draw_bounding_box_color(display, 0, 0, IMG_W, IMG_H, "ERROR", TFT_COLOR_RED);
 			}
 			else if (result.detected)
 			{
+				if (result.confidence > 0.9)
+				{
+					color = TFT_COLOR_RED;
+				}
+				else if (result.confidence > 0.8)
+				{
+					color = TFT_COLOR_ORANGE;
+				}
+				else
+				{
+					color = TFT_COLOR_YELLOW;
+				}
+
 				int box_w = (int)(result.w * IMG_W);
 				int box_h = (int)(result.h * IMG_H);
 				box_w = MIN(box_w, IMG_W);
@@ -263,13 +277,14 @@ int main(void)
 					box_y = IMG_H - box_y;
 				}
 
-				tft_draw_bounding_box(display, box_x, box_y, box_w, box_h, logtext);
+				tft_draw_bounding_box_color(display, box_x, box_y, box_w, box_h, logtext, color);
 			}
 			else
 			{
 				if (show_nodrone)
 				{
-					tft_draw_bounding_box(display, 0, 0, IMG_W, IMG_H, logtext);
+					color = result.confidence < 0.3 ? TFT_COLOR_DARKGREEN : TFT_COLOR_GREEN;
+					tft_draw_bounding_box_color(display, 0, 0, IMG_W, IMG_H, logtext, color);
 				}
 			}
 		}
