@@ -122,16 +122,6 @@ class Program
 
         var possiblePaths = new List<string>
         {
-            // clear
-            Path.Combine(root, "2x2", "clear", $"{id}_clear_current_frame.png"),
-            Path.Combine(root, "2x2", "clear", $"{id}_clear_diff_frame.png"),
-            Path.Combine(root, "3x3", "clear", $"{id}_clear_current_frame.png"),
-            Path.Combine(root, "3x3", "clear", $"{id}_clear_diff_frame.png"),
-            Path.Combine(root, "4x4", "clear", $"{id}_clear_current_frame.png"),
-            Path.Combine(root, "4x4", "clear", $"{id}_clear_diff_frame.png"),
-            Path.Combine(root, "grey", "clear", $"{id}_clear_current_frame.png"),
-            Path.Combine(root, "grey", "clear", $"{id}_clear_diff_frame.png"),
-
             // drone
             Path.Combine(root, "2x2", "drone", $"{id}_drone_current_frame.png"),
             Path.Combine(root, "2x2", "drone", $"{id}_drone_diff_frame.png"),
@@ -141,9 +131,6 @@ class Program
             Path.Combine(root, "4x4", "drone", $"{id}_drone_diff_frame.png"),
             Path.Combine(root, "grey", "drone", $"{id}_drone_current_frame.png"),
             Path.Combine(root, "grey", "drone", $"{id}_drone_diff_frame.png"),
-
-            // ignored (no extension)
-            Path.Combine(root, "ignored", $"{id}_ignored")
         };
 
         foreach (var oldPath in possiblePaths)
