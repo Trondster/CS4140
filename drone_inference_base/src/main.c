@@ -210,14 +210,15 @@ int main(void)
 
 		uint8_t *shown_buffer = show_grayscale ? current_buffer : other_buffer;
 
-		tft_draw_scaled_grayscale_image(display, 0, 0, SCALED_W, SCALED_H, shown_buffer, PIC_SCALING);
 		if (got_sw0)
 		{
+			tft_draw_scaled_grayscale_image(display, 0, 0, SCALED_W, SCALED_H, shown_buffer, PIC_SCALING);
 			tft_draw_bounding_box(display, 0, 0, 160, 120, show_grayscale ? "grayscale" : "diff");
 			k_msleep(200);
 		}
 		else if (got_sw1)
 		{
+			tft_draw_scaled_grayscale_image(display, 0, 0, SCALED_W, SCALED_H, shown_buffer, PIC_SCALING);
 			tft_draw_bounding_box(display, 0, 0, 160, 120, show_nodrone ? "Show Nodrone" : "Hide Nodrone");
 			k_msleep(200);
 		}
@@ -232,8 +233,10 @@ int main(void)
 			{
 				decimals = 999;
 			}
-
 			snprintf(logtext, sizeof(logtext), "%s .%03d", result.detected ? "D" : "Nodrone", decimals);
+
+			//Delay drawing until the inference is done, to minimize flickering.
+			tft_draw_scaled_grayscale_image(display, 0, 0, SCALED_W, SCALED_H, shown_buffer, PIC_SCALING);
 
 			uint16_t color;
 			if (rc != 0)
