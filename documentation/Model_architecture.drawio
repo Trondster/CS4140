@@ -1,6 +1,6 @@
 <mxfile host="Electron">
   <diagram name="Page-1" id="d80QoOdB__DUsXAafvp-">
-    <mxGraphModel dx="1347" dy="993" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="737" dy="537" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -22,7 +22,7 @@
         <mxCell id="GtsW7H77CVGiOjcm-E57-7" connectable="0" parent="1" style="group" value="" vertex="1">
           <mxGeometry height="50" width="105" x="160" y="320" as="geometry" />
         </mxCell>
-        <mxCell id="GtsW7H77CVGiOjcm-E57-4" parent="GtsW7H77CVGiOjcm-E57-7" style="rounded=0;whiteSpace=wrap;html=1;spacingTop=0;spacingLeft=55;spacingBottom=20;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="x36" vertex="1">
+        <mxCell id="GtsW7H77CVGiOjcm-E57-4" parent="GtsW7H77CVGiOjcm-E57-7" style="rounded=0;whiteSpace=wrap;html=1;spacingTop=0;spacingLeft=55;spacingBottom=20;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="x42" vertex="1">
           <mxGeometry height="40" width="80" x="25" y="10" as="geometry" />
         </mxCell>
         <mxCell id="GtsW7H77CVGiOjcm-E57-2" parent="GtsW7H77CVGiOjcm-E57-7" style="rounded=0;whiteSpace=wrap;html=1;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="Convolution 40x30" vertex="1">
@@ -55,7 +55,7 @@
         <mxCell id="GtsW7H77CVGiOjcm-E57-19" connectable="0" parent="1" style="group" value="" vertex="1">
           <mxGeometry height="50" width="105" x="320" y="320" as="geometry" />
         </mxCell>
-        <mxCell id="GtsW7H77CVGiOjcm-E57-20" parent="GtsW7H77CVGiOjcm-E57-19" style="rounded=0;whiteSpace=wrap;html=1;spacingTop=0;spacingLeft=55;spacingBottom=20;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="x36" vertex="1">
+        <mxCell id="GtsW7H77CVGiOjcm-E57-20" parent="GtsW7H77CVGiOjcm-E57-19" style="rounded=0;whiteSpace=wrap;html=1;spacingTop=0;spacingLeft=55;spacingBottom=20;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="x42" vertex="1">
           <mxGeometry height="40" width="80" x="25" y="10" as="geometry" />
         </mxCell>
         <mxCell id="GtsW7H77CVGiOjcm-E57-21" parent="GtsW7H77CVGiOjcm-E57-19" style="rounded=0;whiteSpace=wrap;html=1;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="Convolution 40x30" vertex="1">
@@ -179,7 +179,7 @@
         <mxCell id="GtsW7H77CVGiOjcm-E57-52" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Dense x16 [ReLU]" vertex="1">
           <mxGeometry height="40" width="240" x="160" y="980" as="geometry" />
         </mxCell>
-        <mxCell id="GtsW7H77CVGiOjcm-E57-56" edge="1" parent="1" source="GtsW7H77CVGiOjcm-E57-53" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="GtsW7H77CVGiOjcm-E57-54">
+        <mxCell id="GtsW7H77CVGiOjcm-E57-69" edge="1" parent="1" source="GtsW7H77CVGiOjcm-E57-53" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="GtsW7H77CVGiOjcm-E57-68">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="GtsW7H77CVGiOjcm-E57-53" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Dense x16 [ReLU]" vertex="1">
@@ -189,10 +189,10 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="GtsW7H77CVGiOjcm-E57-54" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Dense x8 [ReLU]" vertex="1">
-          <mxGeometry height="40" width="240" x="480" y="900" as="geometry" />
+          <mxGeometry height="40" width="240" x="480" y="980" as="geometry" />
         </mxCell>
         <mxCell id="GtsW7H77CVGiOjcm-E57-60" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Output BBox x4 [Sigmoid]" vertex="1">
-          <mxGeometry height="40" width="240" x="480" y="980" as="geometry" />
+          <mxGeometry height="40" width="240" x="480" y="1060" as="geometry" />
         </mxCell>
         <mxCell id="GtsW7H77CVGiOjcm-E57-61" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Output classification x1 [Sigmoid]" vertex="1">
           <mxGeometry height="40" width="240" x="160" y="1060" as="geometry" />
@@ -202,6 +202,12 @@
             <mxPoint x="440" y="1100" as="sourcePoint" />
             <mxPoint x="440" y="660" as="targetPoint" />
           </mxGeometry>
+        </mxCell>
+        <mxCell id="GtsW7H77CVGiOjcm-E57-70" edge="1" parent="1" source="GtsW7H77CVGiOjcm-E57-68" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="GtsW7H77CVGiOjcm-E57-54">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GtsW7H77CVGiOjcm-E57-68" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Dense x16 [ReLU]" vertex="1">
+          <mxGeometry height="40" width="240" x="480" y="900" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
