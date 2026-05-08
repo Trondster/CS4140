@@ -14,7 +14,7 @@
 
 #define DEBOUNCE_MS 80
 
-#define NEW_IMAGE_TIMEOUT 400
+#define NEW_IMAGE_TIMEOUT 600
 
 #ifdef CONFIG_SCALING_1x1
 #define PIC_SCALING 1
@@ -176,6 +176,8 @@ int main(void)
 
 		const int64_t curr_timestamp = k_uptime_get();
 		const int64_t delta_ms = curr_timestamp - prev_timestamp;
+
+		LOG_INF("Delta: %llu ms", delta_ms);
 		// delta_ms is about 200 milliseconds.
 		if (delta_ms > NEW_IMAGE_TIMEOUT)
 		{
@@ -189,8 +191,8 @@ int main(void)
 			k_msleep(100);
 		}
 
-		read_grayscale_to_image_buffer(current_buffer);
 		prev_timestamp = k_uptime_get();
+		read_grayscale_to_image_buffer(current_buffer);
 		overwrite_unpadded_previous_grayscale_with_diff_minus(current_buffer, other_buffer, SCALED_W, SCALED_H, GRAYSCALE_DIFF_GATE_VALUE);
 
 		bool got_sw0 = false;
@@ -225,7 +227,9 @@ int main(void)
 		else
 		{
 			drone_result_t result;
+			// prev_timestamp = k_uptime_get();
 			int rc = drone_inference_run(current_buffer, other_buffer, SCALED_W * SCALED_H, &result);
+			// LOG_INF("Inference: %llu ms", k_uptime_get() - prev_timestamp);
 
 			char logtext[30];
 			int decimals = (int)(result.confidence * 1000);
@@ -292,7 +296,7 @@ int main(void)
 			}
 		}
 
-		k_msleep(10);
+		k_msleep(1);
 	}
 	return 0;
 }
