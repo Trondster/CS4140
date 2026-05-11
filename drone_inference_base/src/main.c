@@ -175,9 +175,9 @@ int main(void)
 		other_buffer = current_is_a ? gray_image_buffer_b : gray_image_buffer_a;
 
 		const int64_t curr_timestamp = k_uptime_get();
-		const int64_t delta_ms = curr_timestamp - prev_timestamp;
+		int64_t delta_ms = curr_timestamp - prev_timestamp;
 
-		LOG_INF("Delta: %llu ms", delta_ms);
+		LOG_INF("New frame: %llu ms", delta_ms);
 		// delta_ms is about 200 milliseconds.
 		if (delta_ms > NEW_IMAGE_TIMEOUT)
 		{
@@ -227,9 +227,9 @@ int main(void)
 		else
 		{
 			drone_result_t result;
-			// prev_timestamp = k_uptime_get();
+			delta_ms = k_uptime_get();
 			int rc = drone_inference_run(current_buffer, other_buffer, SCALED_W * SCALED_H, &result);
-			// LOG_INF("Inference: %llu ms", k_uptime_get() - prev_timestamp);
+			LOG_INF("Inference: %llu ms", k_uptime_get() - delta_ms);
 
 			char logtext[30];
 			int decimals = (int)(result.confidence * 1000);
