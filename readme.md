@@ -20,7 +20,8 @@ Other folders:
 * **train** - contains the Jupyter notebook for model training. Open `lib\drone-classification.ipynb` to run the model. To run it, upload the dataset.zip file found at [https://drive.google.com/file/d/1E1GRKtAh0No5De3GQojph6V3vIS9nVSM/view?usp=drive_link](https://drive.google.com/file/d/1E1GRKtAh0No5De3GQojph6V3vIS9nVSM/view?usp=drive_link) as `dataset.zip`.
 * **documentation** - contains some documentation files, as well as Jupyter notebooks containing some test models.
 
-## Extended software documentation
+
+## Extended documentation
 
 ### camera-show-on-screen
 The screen should show the camera input.
@@ -47,6 +48,7 @@ Press `button0` to freeze the frame, and press `button1` to cycle through the mo
 Program for capturing images and transferring them to the computer. Captures grayscale and diff images, including 2x, 3x, 4x scaled versions. 
 
 To capture, run the Python script at `lib\python\receive_image.py` to capture images, for example `python .\receive_image.py COM4`.
+When capturing, the authors put the captured images in the `train\dataset` folder.
 
 The camera has several modes, with `button0` cycling through the modes.
 * **LIVE** mode - initial mode
@@ -75,9 +77,21 @@ Controls:
 * `Button1` toggles if the program should display a confidence bounding box a drone is not found. If on, it draws a green bounding box around the screen displaying the confidence value.
 
 
-### image-labeler ###
+### image-labeler
 Program for labelling captured files. The easiest way to run it is to open the image-labeler folder in Visual Studio Code and compile and do `Run->Start Debugging` from there. May require installing the .Net SDK.
 
 You can select desired files, label them and save the labeling information. There are keyboard shortcuts to repidly move through images, files can be marked as ignored, there is some simple functionality to batch label `clear` files, and some unfinished functionality to better organize the files.
 
-
+### documentation
+Contains some documentation:
+* claud prompts image labeling.txt - txt file with Claude prompts from image labeling generation.
+* Model_architecture.drawio - Model architecture used in the project report
+* Jupyter - folder with jupyter notebooks
+  +  Variations - folder with the main model variations
+    - Main - The main model used in the project, using both the Current and Diff image. Is also found in `train\drone-classification.ipynb`. 
+    - Current_only - Variation using only the Current image
+    - Diff_only - Variation using only the Diff image
+  + Experimental - Experimental models trained using only a subset of the images
+    - Main_current_and diff - Experimental variation using both Current and Diff images of the subset
+    - Current_only - Experimental variation using only the Current images of the subset
+    - Diff_only - Experimental variation using only the Diff images of the subset
