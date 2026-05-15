@@ -284,14 +284,18 @@ int main(void)
 					box_y = IMG_H - box_y;
 				}
 
+				// delta_ms = k_uptime_get();
 				tft_draw_bounding_box_color(display, box_x, box_y, box_w, box_h, logtext, color);
+				// LOG_INF("BB %llu ms", k_uptime_get() - delta_ms);
 			}
 			else
 			{
 				if (show_nodrone)
 				{
 					color = result.confidence < 0.3 ? TFT_COLOR_DARKGREEN : TFT_COLOR_GREEN;
+					// delta_ms = k_uptime_get();
 					tft_draw_bounding_box_color(display, 0, 0, IMG_W, IMG_H, logtext, color);
+					// LOG_INF("BB %llu ms", k_uptime_get() - delta_ms);
 				}
 			}
 		}
