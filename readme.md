@@ -97,4 +97,4 @@ Contains some documentation:
     - Diff_only - Experimental variation using only the Diff images of the subset
   + Demo - Run this for a demo of the implemented model.
     - drone_classification_demo.ipynb - Open this Jupyter Notebook in Google Colab. Download the dataset.zip from [https://drive.google.com/file/d/1E1GRKtAh0No5De3GQojph6V3vIS9nVSM/view?usp=drive_link](https://drive.google.com/file/d/1E1GRKtAh0No5De3GQojph6V3vIS9nVSM/view?usp=drive_link) and upload it into the notebook, along with the `drone_model_ptq_int8.tflite` file in this folder.
-    - drone_model_ptq_int8.tflite - Upload this file into the notebook in addition to dataset.zip. Then run the demo. :)
+    - drone_model_ptq_int8.tflite - Upload this file into the notebook in addition to dataset.zip. Then run the demo. This model is the model in `drone_inference_base\src\drone_model_ptq_int8.h`. :)
